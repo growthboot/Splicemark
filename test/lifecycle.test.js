@@ -64,15 +64,13 @@ test('clean removes only obsolete coordination state', t => {
 	const active = store.start('Active task', 'head-new');
 	const finished = store.start('Finished task', 'head-new');
 
-	store.recordEdit(active.id, {
+	const retired = store.recordEdit(active.id, {
 		path: 'source.js',
 		head: 'head-old',
 		removed: 'old',
 		inserted: 'committed',
 		status: 'retired'
 	});
-
-	const retired = store.listEdits(active.id)[0];
 	store.updateEditStatus(active.id, retired.id, 'retired', 'head-new');
 
 	store.recordEdit(active.id, {
@@ -82,14 +80,12 @@ test('clean removes only obsolete coordination state', t => {
 		inserted: 'b'
 	});
 
-	store.recordEdit(active.id, {
+	const stale = store.recordEdit(active.id, {
 		path: 'source.js',
 		head: 'head-old',
 		removed: 'x',
 		inserted: 'y'
 	});
-
-	const stale = store.listEdits(active.id).at(-1);
 	store.updateEditStatus(active.id, stale.id, 'stale', 'head-new');
 
 	store.recordNote(active.id, {
