@@ -1,0 +1,16 @@
+{
+	"name": "splicemark",
+	"version": "0.1.0",
+	"private": true,
+	"type": "module",
+	"bin": {
+		"splicemark": "./bin/splicemark.js"
+	},
+	"scripts": {
+		"check": "node --check bin/splicemark.js && node --check src/Git.js && node --check src/FileEditor.js && node --check src/SessionStore.js && node --check src/PeerRegistry.js && node --check src/Reconciler.js && node --check src/Diff.js && node --check src/Splicemark.js",
+		"test": "node --test"
+	},
+	"engines": {
+		"node": ">=20"
+	}
+}
