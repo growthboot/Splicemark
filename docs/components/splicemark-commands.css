@@ -1,0 +1,143 @@
+:host {
+	display: block;
+	padding: 0;
+	border: 0;
+	background: transparent;
+}
+
+.heading {
+	display: grid;
+	grid-template-columns:
+		110px
+		minmax(0, 1fr)
+		minmax(260px, 0.65fr);
+	gap: 30px;
+	align-items: start;
+	margin-bottom: 42px;
+}
+
+.heading > p {
+	margin: 8px 0 0;
+	color: #a995ff;
+	font: 700 11px var(--mono);
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+}
+
+.heading h2 {
+	max-width: 660px;
+	margin: 0;
+	font-size: clamp(38px, 5vw, 58px);
+	line-height: 0.98;
+	letter-spacing: -0.055em;
+}
+
+.heading > span {
+	color: #8791a1;
+	font-size: 13px;
+	line-height: 1.7;
+}
+
+.grid {
+	display: grid;
+	grid-template-columns: 0.82fr 1.18fr;
+	gap: 15px;
+}
+
+.install,
+.commands {
+	overflow: hidden;
+	border: 1px solid #2b3240;
+	border-radius: 15px;
+	background: #0d1017;
+}
+
+.bar {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	min-height: 44px;
+	padding: 0 15px;
+	border-bottom: 1px solid #252b37;
+	background: #11151d;
+	color: #717c8d;
+	font: 600 10px var(--mono);
+}
+
+.bar a {
+	color: #bcb3f4;
+	text-decoration: none;
+}
+
+.bar code {
+	color: #747e8e;
+}
+
+pre {
+	overflow: auto;
+	min-height: 220px;
+	margin: 0;
+	padding: 20px;
+	color: #b8c1cf;
+	font: 11px/1.7 var(--mono);
+	white-space: pre-wrap;
+}
+
+.license {
+	display: flex;
+	gap: 11px;
+	align-items: center;
+	padding: 14px 18px;
+	border-top: 1px solid #252b37;
+	color: #727c8c;
+	font-size: 11px;
+}
+
+.license strong {
+	color: #75d297;
+	font-family: var(--mono);
+	font-size: 10px;
+	text-transform: uppercase;
+}
+
+.agent-prompt {
+	display: grid;
+	grid-template-columns: 200px 1fr;
+	gap: 25px;
+	margin-top: 20px;
+	padding: 22px;
+	border: 1px solid #2a303d;
+	border-radius: 12px;
+	background: #10141b;
+}
+
+.agent-prompt strong {
+	color: #d5cfff;
+	font: 700 11px var(--mono);
+}
+
+.agent-prompt p {
+	margin: 0;
+	color: #8d97a7;
+	font-size: 12px;
+	line-height: 1.7;
+}
+
+.agent-prompt code {
+	color: #c5baff;
+	font-family: var(--mono);
+}
+
+@media (max-width: 880px) {
+	.heading {
+		grid-template-columns: 1fr;
+	}
+
+	.grid {
+		grid-template-columns: 1fr;
+	}
+
+	.agent-prompt {
+		grid-template-columns: 1fr;
+	}
+}

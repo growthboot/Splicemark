@@ -1,0 +1,456 @@
+<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta
+		name="description"
+		content="Splicemark is an authorship-aware editing CLI for coding agents sharing one Git working tree."
+	>
+	<title>Splicemark · Guide</title>
+	<link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+	<header class="topbar">
+		<a class="wordmark" href="#overview">Splicemark</a>
+
+		<nav aria-label="Site">
+			<a href="#cli">CLI</a>
+			<a
+				href="https://github.com/growthboot/Splicemark"
+				target="_blank"
+				rel="noreferrer"
+			>
+				GitHub ↗
+			</a>
+		</nav>
+	</header>
+
+	<div class="docs-shell">
+		<aside class="toc">
+			<p>Guide</p>
+
+			<nav aria-label="Documentation">
+				<a href="#overview">Overview</a>
+				<a href="#model">The model</a>
+				<a href="#edit">Precise edits</a>
+				<a href="#batch">Batch writes</a>
+				<a href="#peers">Peer awareness</a>
+				<a href="#notes">Code notes</a>
+				<a href="#reconcile">Git reconciliation</a>
+				<a href="#cli">CLI reference</a>
+				<a href="#non-goals">Non-goals</a>
+			</nav>
+
+			<div class="toc-meta">
+				<span>MIT</span>
+				<span>Node 20+</span>
+			</div>
+		</aside>
+
+		<main class="document">
+			<section class="intro" id="overview">
+				<p class="breadcrumb">Splicemark / Guide</p>
+
+				<h1>
+					Authorship-aware editing for coding agents sharing one
+					working tree.
+				</h1>
+
+				<p class="lede">
+					Splicemark gives each agent a task identity, records exact
+					mutations when they happen, keeps routine review local to
+					that task, and surfaces other agents only when their work
+					intersects the same code.
+				</p>
+
+				<div class="quickstart">
+					<div class="quickstart-label">Start here</div>
+
+					<pre><code>splicemark start "fix queue recovery"
+splicemark edit sm-… src/queue.js --lines 42:42 \
+  --expect-start "return retry(job);" \
+  --expect-end "return retry(job);"</code></pre>
+				</div>
+
+				<p class="plain-note">
+					There is no daemon, account, branch orchestration, or
+					separate merge model. Git remains the aggregate source of
+					truth. Splicemark owns only the coordination around
+					uncommitted edits.
+				</p>
+			</section>
+
+			<section class="doc-section" id="model">
+				<header class="section-header">
+					<span class="section-number">00</span>
+
+					<div>
+						<h2>The model</h2>
+
+						<p>
+							Multiple agents work in the same physical tree.
+							Splicemark records who changed what at mutation
+							time instead of trying to infer authorship later
+							from an aggregate diff.
+						</p>
+					</div>
+				</header>
+
+				<div class="model">
+					<div class="agent">
+						<strong>Agent A</strong>
+						<span>session sm-a</span>
+					</div>
+
+					<div class="arrow">→</div>
+
+					<div class="middle">
+						<strong>Splicemark</strong>
+						<span>attribution + local coordination</span>
+					</div>
+
+					<div class="arrow">→</div>
+
+					<div class="tree">
+						<strong>shared working tree</strong>
+						<span>ordinary files</span>
+					</div>
+
+					<div class="arrow">→</div>
+
+					<div class="git">
+						<strong>Git</strong>
+						<span>aggregate history</span>
+					</div>
+
+					<div class="agent second">
+						<strong>Agent B</strong>
+						<span>session sm-b</span>
+					</div>
+				</div>
+
+				<div class="principles">
+					<div>
+						<strong>Mutation-time authorship</strong>
+						<p>
+							Ownership is known because Splicemark performs the
+							write.
+						</p>
+					</div>
+
+					<div>
+						<strong>Local awareness</strong>
+						<p>
+							Unrelated agents stay invisible. Overlap is what
+							creates coordination context.
+						</p>
+					</div>
+
+					<div>
+						<strong>Git authority</strong>
+						<p>
+							Once HEAD absorbs a mutation, active Splicemark
+							attribution can retire.
+						</p>
+					</div>
+				</div>
+			</section>
+
+			<section class="doc-section" id="edit">
+				<header class="section-header">
+					<span class="section-number">01</span>
+
+					<div>
+						<h2>Precise edits</h2>
+
+						<p>
+							A single edit targets an inclusive line or
+							character range and carries expected boundaries.
+							If concurrent work shifts both boundaries by the
+							same amount and the target remains unique,
+							Splicemark relocates it. Ambiguity is refused.
+						</p>
+					</div>
+				</header>
+
+				<div class="syntax">
+					<code>
+						splicemark edit SESSION FILE --lines START:END
+						--expect-start TEXT --expect-end TEXT
+					</code>
+				</div>
+
+				<div class="invariant">
+					<strong>Invariant</strong>
+					<span>
+						A stale coordinate is acceptable. An ambiguous target
+						is not.
+					</span>
+				</div>
+
+				<splicemark-live-example
+					scenario="edit"
+				></splicemark-live-example>
+			</section>
+
+			<section class="doc-section" id="batch">
+				<header class="section-header">
+					<span class="section-number">02</span>
+
+					<div>
+						<h2>Batch writes</h2>
+
+						<p>
+							When an agent has already validated several
+							non-overlapping ranges against one snapshot, they
+							can be submitted together. Splicemark sorts them
+							bottom-to-top and writes the resulting file once.
+						</p>
+					</div>
+				</header>
+
+				<div class="syntax">
+					<code>
+						splicemark batch SESSION FILE --lines &lt; splices.json
+					</code>
+				</div>
+
+				<div class="invariant">
+					<strong>Why bottom-to-top?</strong>
+					<span>
+						An earlier write cannot move a lower range before that
+						lower range has been applied.
+					</span>
+				</div>
+
+				<splicemark-live-example
+					scenario="batch"
+				></splicemark-live-example>
+			</section>
+
+			<section class="doc-section" id="peers">
+				<header class="section-header">
+					<span class="section-number">03</span>
+
+					<div>
+						<h2>Peer awareness</h2>
+
+						<p>
+							Splicemark is not an agent activity feed. A peer
+							edit is surfaced when another active session owns
+							work in the region the current edit is entering.
+							Everything else remains outside the task context.
+						</p>
+					</div>
+				</header>
+
+				<div class="invariant">
+					<strong>Scope</strong>
+					<span>
+						same file + overlapping active line region + compatible
+						HEAD
+					</span>
+				</div>
+
+				<splicemark-live-example
+					scenario="peers"
+				></splicemark-live-example>
+			</section>
+
+			<section class="doc-section" id="notes">
+				<header class="section-header">
+					<span class="section-number">04</span>
+
+					<div>
+						<h2>Code-bound notes</h2>
+
+						<p>
+							Notes exist for exceptional coordination that
+							cannot be expressed by authorship alone. They are
+							attached to code, not sent to an agent, and are
+							shown only when another active session enters the
+							noted region.
+						</p>
+					</div>
+				</header>
+
+				<div class="syntax">
+					<code>
+						splicemark note SESSION FILE --lines START:END
+						--message TEXT
+					</code>
+				</div>
+
+				<div class="invariant">
+					<strong>Lifetime</strong>
+					<span>
+						A note belongs to the HEAD on which it was created and
+						stops participating as soon as HEAD changes.
+					</span>
+				</div>
+
+				<splicemark-live-example
+					scenario="notes"
+				></splicemark-live-example>
+			</section>
+
+			<section class="doc-section" id="reconcile">
+				<header class="section-header">
+					<span class="section-number">05</span>
+
+					<div>
+						<h2>Git reconciliation</h2>
+
+						<p>
+							Splicemark does not compete with Git. When HEAD
+							changes, active authorship is compared with the
+							committed and working diffs and classified as
+							active, retired, or stale.
+						</p>
+					</div>
+				</header>
+
+				<div class="state-table">
+					<div>
+						<code>active</code>
+						<span>
+							the authored mutation is still in the working tree
+							and not in the new commit
+						</span>
+					</div>
+
+					<div>
+						<code>retired</code>
+						<span>
+							the mutation was absorbed by Git
+						</span>
+					</div>
+
+					<div>
+						<code>stale</code>
+						<span>
+							Splicemark can no longer map ownership
+							unambiguously
+						</span>
+					</div>
+				</div>
+
+				<splicemark-live-example
+					scenario="reconcile"
+				></splicemark-live-example>
+			</section>
+
+			<section class="doc-section" id="cli">
+				<header class="section-header">
+					<span class="section-number">06</span>
+
+					<div>
+						<h2>CLI reference</h2>
+
+						<p>
+							The command surface is intentionally small. A
+							session starts with a short task description and
+							ends when that task is finished.
+						</p>
+					</div>
+				</header>
+
+				<div class="command-list">
+					<div>
+						<code>start "description"</code>
+						<span>create an active task identity</span>
+					</div>
+
+					<div>
+						<code>edit SESSION FILE …</code>
+						<span>perform one validated attributed mutation</span>
+					</div>
+
+					<div>
+						<code>batch SESSION FILE …</code>
+						<span>apply prevalidated non-overlapping splices</span>
+					</div>
+
+					<div>
+						<code>note SESSION FILE …</code>
+						<span>attach exceptional coordination to code</span>
+					</div>
+
+					<div>
+						<code>diff SESSION</code>
+						<span>review active changes attributed to one task</span>
+					</div>
+
+					<div>
+						<code>finish SESSION</code>
+						<span>mark the task inactive</span>
+					</div>
+
+					<div>
+						<code>clean</code>
+						<span>remove obsolete coordination state</span>
+					</div>
+				</div>
+
+				<h3 class="subheading">Install from source</h3>
+
+				<pre class="code-block"><code>git clone https://github.com/growthboot/Splicemark.git
+cd Splicemark
+npm link</code></pre>
+
+				<h3 class="subheading">Minimal agent instruction</h3>
+
+				<div class="instruction">
+					Start a Splicemark session for the task and retain the
+					returned session ID. Use Splicemark for writes. Use
+					<code>edit</code> for a single validated range or
+					<code>batch</code> after validating all non-overlapping
+					ranges against one snapshot. Use
+					<code>diff SESSION</code> for task-local review and
+					<code>finish SESSION</code> when done.
+				</div>
+			</section>
+
+			<section class="doc-section" id="non-goals">
+				<header class="section-header">
+					<span class="section-number">07</span>
+
+					<div>
+						<h2>Non-goals</h2>
+
+						<p>
+							Splicemark is deliberately narrow. These are not
+							missing features; they are boundaries around the
+							problem it is trying to solve.
+						</p>
+					</div>
+				</header>
+
+				<ul class="non-goals">
+					<li>no branches or per-agent worktrees</li>
+					<li>no alternative staging model</li>
+					<li>no merge workflow</li>
+					<li>no agent chat or global activity feed</li>
+					<li>no permanent annotations in source files</li>
+					<li>no replacement for normal Git review and history</li>
+				</ul>
+			</section>
+
+			<footer class="footer">
+				<span>Splicemark · MIT</span>
+
+				<a
+					href="https://github.com/growthboot/Splicemark"
+					target="_blank"
+					rel="noreferrer"
+				>
+					github.com/growthboot/Splicemark ↗
+				</a>
+			</footer>
+		</main>
+	</div>
+
+	<script type="module" src="./app.js"></script>
+</body>
+</html>

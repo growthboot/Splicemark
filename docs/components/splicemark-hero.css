@@ -1,0 +1,271 @@
+:host {
+	display: block;
+}
+
+.hero {
+	position: relative;
+	display: grid;
+	grid-template-columns:
+		minmax(0, 1.03fr)
+		minmax(420px, 0.97fr);
+	gap: clamp(50px, 7vw, 100px);
+	align-items: center;
+	width: min(1180px, calc(100% - 40px));
+	min-height: 720px;
+	margin-inline: auto;
+	padding-block: 80px 70px;
+}
+
+.glow {
+	position: absolute;
+	z-index: -1;
+	top: 90px;
+	left: 5%;
+	width: 420px;
+	height: 420px;
+	border-radius: 50%;
+	background: rgba(139, 109, 255, 0.09);
+	filter: blur(90px);
+	pointer-events: none;
+}
+
+.copy {
+	max-width: 700px;
+}
+
+.badge {
+	display: inline-flex;
+	gap: 9px;
+	align-items: center;
+	padding: 8px 12px;
+	border: 1px solid #303747;
+	border-radius: 999px;
+	background: rgba(18, 22, 31, 0.72);
+	color: #b8c0ce;
+	font-family: var(--mono);
+	font-size: 11px;
+	letter-spacing: 0.04em;
+	text-transform: uppercase;
+}
+
+.pulse {
+	width: 7px;
+	height: 7px;
+	border-radius: 50%;
+	background: #67d391;
+	box-shadow:
+		0 0 0 4px rgba(103, 211, 145, 0.11);
+}
+
+h1 {
+	max-width: 760px;
+	margin: 24px 0 25px;
+	font-size: clamp(52px, 7.1vw, 88px);
+	font-weight: 790;
+	line-height: 0.91;
+	letter-spacing: -0.07em;
+}
+
+h1 span {
+	background: linear-gradient(
+		110deg,
+		#fff 8%,
+		#c4b9ff 52%,
+		#ff91b2 98%
+	);
+	background-clip: text;
+	color: transparent;
+}
+
+.lead {
+	max-width: 680px;
+	margin: 0;
+	color: #a7afbd;
+	font-size: clamp(17px, 2vw, 20px);
+	line-height: 1.65;
+}
+
+.actions {
+	display: flex;
+	gap: 12px;
+	margin-top: 32px;
+}
+
+.actions a {
+	padding: 12px 17px;
+	border-radius: 10px;
+	font-size: 14px;
+	font-weight: 700;
+	text-decoration: none;
+}
+
+.primary {
+	background: #f7f8fb;
+	color: #0b0d12;
+}
+
+.secondary {
+	border: 1px solid #353c4b;
+	background: #10141c;
+	color: #dfe4ec;
+}
+
+.facts {
+	display: grid;
+	grid-template-columns: repeat(3, 1fr);
+	gap: 20px;
+	margin-top: 52px;
+	padding-top: 25px;
+	border-top: 1px solid #262c39;
+}
+
+.facts div {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+}
+
+.facts strong {
+	color: #fff;
+	font-family: var(--mono);
+	font-size: 16px;
+}
+
+.facts span {
+	color: #778091;
+	font-size: 12px;
+}
+
+.artifact {
+	overflow: hidden;
+	border: 1px solid #303746;
+	border-radius: 18px;
+	background: #0c0f15;
+	box-shadow:
+		0 38px 110px rgba(0, 0, 0, 0.42),
+		inset 0 1px rgba(255, 255, 255, 0.025);
+	transform: rotate(1.1deg);
+}
+
+.artifact-bar {
+	display: flex;
+	gap: 7px;
+	align-items: center;
+	height: 45px;
+	padding: 0 15px;
+	border-bottom: 1px solid #222834;
+	background: #11151d;
+}
+
+.artifact-bar span {
+	width: 8px;
+	height: 8px;
+	border-radius: 50%;
+	background: #404858;
+}
+
+.artifact-bar em {
+	margin-left: auto;
+	color: #697385;
+	font-family: var(--mono);
+	font-size: 10px;
+	font-style: normal;
+}
+
+pre {
+	overflow: auto;
+	margin: 0;
+	padding: 22px;
+	border-bottom: 1px solid #202633;
+	color: #ced5e1;
+	font-family: var(--mono);
+	font-size: 12px;
+	line-height: 1.7;
+}
+
+.prompt {
+	color: #ff7ba3;
+}
+
+.diff {
+	display: flex;
+	flex-direction: column;
+	gap: 9px;
+	padding: 22px;
+	font-family: var(--mono);
+	font-size: 11px;
+	line-height: 1.55;
+}
+
+.diff strong {
+	color: #d8d0ff;
+	font-weight: 700;
+}
+
+.diff .peer {
+	margin-top: 12px;
+	color: #ff9fba;
+}
+
+.minus {
+	color: #f08c9c;
+}
+
+.plus {
+	color: #77d89a;
+}
+
+.artifact footer {
+	display: flex;
+	justify-content: space-between;
+	padding: 13px 17px;
+	border-top: 1px solid #202633;
+	color: #596375;
+	font-size: 10px;
+}
+
+.artifact footer code {
+	color: #8e98aa;
+}
+
+@media (max-width: 940px) {
+	.hero {
+		grid-template-columns: 1fr;
+		min-height: auto;
+		padding-top: 70px;
+	}
+
+	.artifact {
+		transform: none;
+	}
+}
+
+@media (max-width: 620px) {
+	.hero {
+		width: min(100% - 24px, 1180px);
+		padding-block: 52px 35px;
+	}
+
+	h1 {
+		font-size: clamp(48px, 15vw, 68px);
+	}
+
+	.actions {
+		align-items: stretch;
+		flex-direction: column;
+	}
+
+	.actions a {
+		text-align: center;
+	}
+
+	.facts {
+		grid-template-columns: 1fr;
+		gap: 13px;
+	}
+
+	.artifact footer {
+		flex-direction: column;
+		gap: 5px;
+	}
+}

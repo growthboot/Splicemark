@@ -7,8 +7,11 @@
 		"splicemark": "./bin/splicemark.js"
 	},
 	"scripts": {
-		"check": "node --check bin/splicemark.js && node --check src/Git.js && node --check src/FileEditor.js && node --check src/SessionStore.js && node --check src/PeerRegistry.js && node --check src/Reconciler.js && node --check src/Diff.js && node --check src/Splicemark.js",
-		"test": "node --test"
+		"check": "node --check bin/splicemark.js && node --check src/Git.js && node --check src/TextEditor.js && node --check src/FileEditor.js && node --check src/SessionStore.js && node --check src/PeerRegistry.js && node --check src/Reconciler.js && node --check src/Diff.js && node --check src/Splicemark.js",
+		"test": "node --test",
+		"site:serve": "node scripts/serve-site.js",
+		"site:check": "node --check scripts/serve-site.js && node --check scripts/sync-site-core.js && node scripts/sync-site-core.js && node --check docs/runtime/MemorySessionStore.js && node --check docs/runtime/LiveDemo.js && node --check docs/app.js && node --check docs/components/splicemark-live-example.js",
+		"site:sync-core": "node scripts/sync-site-core.js"
 	},
 	"engines": {
 		"node": ">=20"
