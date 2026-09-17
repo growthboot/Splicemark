@@ -15,6 +15,7 @@
 		<a class="wordmark" href="#top">Splicemark</a>
 
 		<nav aria-label="Site">
+			<a href="#field-notes">Field notes</a>
 			<a href="#overview">Guide</a>
 			<a href="#cli">CLI</a>
 			<a
@@ -27,77 +28,9 @@
 		</nav>
 	</header>
 
-	<section class="site-hero" id="top" aria-labelledby="hero-title">
-		<div class="hero-inner">
-			<div class="hero-copy">
-				<p class="hero-kicker">
-					<span>Splicemark</span> / shared-tree coordination
-				</p>
+	<splicemark-hero id="top"></splicemark-hero>
 
-				<h1 id="hero-title">
-					One tree.
-					<br>
-					Every edit
-					<br>
-					<span>accounted for.</span>
-				</h1>
-
-				<p class="hero-summary">
-					A small CLI for coding agents working in the same Git
-					working tree. Splicemark records authorship when edits
-					happen, keeps review local to each task, and only surfaces
-					peer work when code overlaps.
-				</p>
-
-				<div class="hero-links" aria-label="Primary links">
-					<a href="#overview">Read the guide ↓</a>
-					<a
-						href="https://github.com/growthboot/Splicemark"
-						target="_blank"
-						rel="noreferrer"
-					>
-						View source ↗
-					</a>
-				</div>
-			</div>
-
-			<div
-				class="hero-trace"
-				aria-label="Authorship trace across one shared working tree"
-			>
-				<div class="trace-heading">
-					<span>mutation log</span>
-					<span>shared working tree</span>
-				</div>
-
-				<div class="trace-file">src/Reconciler.js</div>
-
-				<div class="trace-row">
-					<span class="trace-line">018</span>
-					<span class="trace-mark agent-a"></span>
-					<code>sm-a records boundary-checked edit</code>
-				</div>
-
-				<div class="trace-row active">
-					<span class="trace-line">019</span>
-					<span class="trace-mark agent-b"></span>
-					<code>sm-b touches intersecting range</code>
-				</div>
-
-				<div class="trace-row">
-					<span class="trace-line">020</span>
-					<span class="trace-mark git"></span>
-					<code>Git remains aggregate source of truth</code>
-				</div>
-
-				<div class="trace-note">
-					<span>no daemon</span>
-					<span>no branch orchestration</span>
-					<span>no inferred authorship</span>
-				</div>
-			</div>
-		</div>
-	</section>
+	<splicemark-field-notes id="field-notes"></splicemark-field-notes>
 	<div class="docs-shell">
 		<aside class="toc">
 			<p>Guide</p>

@@ -4,7 +4,6 @@ const stylesheet = new URL(
 ).href;
 
 class SplicemarkHero extends HTMLElement {
-	#data = null;
 	#root;
 
 	constructor() {
@@ -15,116 +14,78 @@ class SplicemarkHero extends HTMLElement {
 		});
 	}
 
-	set data(value) {
-		this.#data = value;
-		this.#render();
-	}
-
 	connectedCallback() {
-		this.#render();
-	}
-
-	#render() {
-		const version = this.#data?.version || '0.1.0';
-		const fingerprint =
-			this.#data?.fingerprint || 'generating';
-
 		this.#root.innerHTML = `
 			<link rel="stylesheet" href="${stylesheet}">
 
-			<section class="hero">
-				<div class="glow"></div>
-
+			<section class="hero" aria-labelledby="hero-title">
 				<div class="copy">
-					<div class="badge">
-						<span class="pulse"></span>
-						MIT · shared working tree · v${version}
-					</div>
-
-					<h1>
-						Let coding agents
-						<span>edit together</span>
-						without merging their workflows.
-					</h1>
-
-					<p class="lead">
-						Splicemark is a small open-source CLI that performs
-						precise attributed edits, keeps routine diffs local to
-						each agent, surfaces overlapping peer work only when it
-						matters, and leaves Git in charge of the aggregate tree.
+					<p class="kicker">
+						<span>Splicemark</span> / shared-tree coordination
 					</p>
 
-					<div class="actions">
-						<a class="primary" href="#demos">
-							Run the demos
-						</a>
+					<h1 id="hero-title">
+						One tree.
+						<br>
+						Every edit
+						<br>
+						<span>accounted for.</span>
+					</h1>
 
+					<p class="summary">
+						A small CLI for coding agents working in the same Git
+						working tree. Splicemark records authorship when edits
+						happen, keeps review local to each task, and only surfaces
+						peer work when code overlaps.
+					</p>
+
+					<div class="links" aria-label="Primary links">
+						<a href="#field-notes">Why this exists ↓</a>
+						<a href="#overview">Read the guide</a>
 						<a
-							class="secondary"
 							href="https://github.com/growthboot/Splicemark"
 							target="_blank"
 							rel="noreferrer"
 						>
-							View source
+							View source ↗
 						</a>
-					</div>
-
-					<div class="facts">
-						<div>
-							<strong>0</strong>
-							<span>branches required</span>
-						</div>
-
-						<div>
-							<strong>2</strong>
-							<span>range modes</span>
-						</div>
-
-						<div>
-							<strong>1 tree</strong>
-							<span>shared by every agent</span>
-						</div>
 					</div>
 				</div>
 
-				<div class="artifact">
-					<div class="artifact-bar">
-						<span></span>
-						<span></span>
-						<span></span>
-						<em>agent-b · shared tree</em>
+				<div
+					class="trace"
+					aria-label="Authorship trace across one shared working tree"
+				>
+					<div class="trace-heading">
+						<span>mutation log</span>
+						<span>shared working tree</span>
 					</div>
 
-					<pre><code><span class="prompt">$</span> splicemark edit sm-b src/Reconciler.js \
-  --lines 18:18 \
-  --expect-start "    return 'active';"</code></pre>
+					<div class="trace-file">src/Reconciler.js</div>
 
-					<div class="diff">
-						<strong>
-							[YOU · sm-b · Refine active reconciliation]
-						</strong>
-
-						<span class="minus">
-							-    return 'active';
-						</span>
-
-						<span class="plus">
-							+    return 'active'; // Agent B touched this region.
-						</span>
-
-						<strong class="peer">
-							[PEER · sm-a · Explain active reconciliation]
-						</strong>
-
-						<span class="plus">
-							+    // Agent A documents this active path.
-						</span>
+					<div class="trace-row">
+						<span class="trace-line">018</span>
+						<span class="trace-mark agent-a"></span>
+						<code>sm-a records boundary-checked edit</code>
 					</div>
 
-					<footer>
-						<span>source fingerprint</span>
-						<code>${fingerprint}</code>
-					</footer>
+					<div class="trace-row active">
+						<span class="trace-line">019</span>
+						<span class="trace-mark agent-b"></span>
+						<code>sm-b touches intersecting range</code>
+					</div>
+
+					<div class="trace-row">
+						<span class="trace-line">020</span>
+						<span class="trace-mark git"></span>
+						<code>Git remains aggregate source of truth</code>
+					</div>
+
+					<div class="trace-note">
+						<span>no daemon</span>
+						<span>no branch orchestration</span>
+						<span>no inferred authorship</span>
+					</div>
 				</div>
 			</section>
 		`;

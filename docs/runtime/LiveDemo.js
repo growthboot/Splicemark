@@ -1,5 +1,3 @@
-import MemorySessionStore from './MemorySessionStore.js';
-
 export default class LiveDemo {
 	#sourceLoader;
 
@@ -39,11 +37,16 @@ export default class LiveDemo {
 	}
 
 	async #edit({
-		TextEditor,
+		SplicemarkCore,
+		MemoryWorkspace,
+		MemorySessionStore,
+		MemoryGit,
 		Diff
 	}) {
 		const file =
 			'Reconciler.js';
+		const path =
+			'src/' + file;
 		const original =
 			await this.#source(file);
 		const target =
@@ -62,9 +65,29 @@ export default class LiveDemo {
 				'// Concurrent edit two.',
 				original
 			].join('\n');
+		const workspace =
+			new MemoryWorkspace({
+				[path]: before
+			});
+		const git =
+			new MemoryGit({
+				workspace
+			});
+		const splicemark =
+			new SplicemarkCore({
+				git,
+				store:
+					new MemorySessionStore(),
+				workspace
+			});
+		const session =
+			splicemark.start(
+				'Annotate working diff lookup'
+			);
 		const result =
-			new TextEditor().edit(
-				before,
+			splicemark.edit(
+				session.id,
+				path,
 				{
 					mode: 'lines',
 					start: target,
@@ -78,25 +101,23 @@ export default class LiveDemo {
 						' // safely relocated'
 				}
 			);
-		const session = {
-			id: 'sm-demo-01',
-			description:
-				'Annotate working diff lookup'
-		};
+		const after =
+			workspace.read(path);
 
 		return {
 			id: 'edit',
 			title:
 				'Precise edits and relocation',
-			file:
-				'src/' + file,
+			file: result.file,
 			before,
-			after: result.content,
+			after,
 			output:
 				new Diff().format(
-					session,
-					'src/' + file,
-					result.edit
+					result.session,
+					result.file,
+					result.edit,
+					result.peers,
+					result.notes
 				),
 			focus: [
 				result.edit.appliedStart
@@ -121,11 +142,16 @@ export default class LiveDemo {
 	}
 
 	async #batch({
-		TextEditor,
+		SplicemarkCore,
+		MemoryWorkspace,
+		MemorySessionStore,
+		MemoryGit,
 		Diff
 	}) {
 		const file =
 			'TextEditor.js';
+		const path =
+			'src/' + file;
 		const before =
 			await this.#source(file);
 		const upper =
@@ -148,9 +174,29 @@ export default class LiveDemo {
 				before,
 				lower
 			);
+		const workspace =
+			new MemoryWorkspace({
+				[path]: before
+			});
+		const git =
+			new MemoryGit({
+				workspace
+			});
+		const splicemark =
+			new SplicemarkCore({
+				git,
+				store:
+					new MemorySessionStore(),
+				workspace
+			});
+		const session =
+			splicemark.start(
+				'Clarify batch validation'
+			);
 		const result =
-			new TextEditor().batch(
-				before,
+			splicemark.batch(
+				session.id,
+				path,
 				{
 					mode: 'lines',
 					splices: [
@@ -177,19 +223,18 @@ export default class LiveDemo {
 					]
 				}
 			);
-		const session = {
-			id: 'sm-demo-01',
-			description:
-				'Clarify batch validation'
-		};
+		const after =
+			workspace.read(path);
 		const diff = new Diff();
 		const output =
-			result.edits
-				.map(edit =>
+			result.results
+				.map(item =>
 					diff.format(
-						session,
-						'src/' + file,
-						edit
+						result.session,
+						result.file,
+						item.edit,
+						item.peers,
+						item.notes
 					).trimEnd()
 				)
 				.join('\n\n') +
@@ -199,15 +244,14 @@ export default class LiveDemo {
 			id: 'batch',
 			title:
 				'Prevalidated batch writes',
-			file:
-				'src/' + file,
+			file: result.file,
 			before,
-			after: result.content,
+			after,
 			output,
 			focus:
-				result.edits.map(
-					edit =>
-						edit.lineStart
+				result.results.map(
+					item =>
+						item.edit.lineStart
 				),
 			facts: [
 				[
@@ -218,10 +262,10 @@ export default class LiveDemo {
 				],
 				[
 					'apply order',
-					result.edits
+					result.results
 						.map(
-							edit =>
-								edit.appliedStart
+							item =>
+								item.edit.appliedStart
 						)
 						.join(' → ')
 				],
@@ -234,32 +278,16 @@ export default class LiveDemo {
 	}
 
 	async #peers({
-		TextEditor,
-		PeerRegistry,
+		SplicemarkCore,
+		MemoryWorkspace,
+		MemorySessionStore,
+		MemoryGit,
 		Diff
 	}) {
 		const file =
 			'PeerRegistry.js';
 		const path =
 			'src/' + file;
-		const head =
-			'demo-head';
-		const store =
-			new MemorySessionStore();
-		const registry =
-			new PeerRegistry(store);
-		const editor =
-			new TextEditor();
-		const first =
-			store.start(
-				'Document peer return',
-				head
-			);
-		const second =
-			store.start(
-				'Refine peer return',
-				head
-			);
 		const original =
 			await this.#source(file);
 		const target =
@@ -272,57 +300,64 @@ export default class LiveDemo {
 				original,
 				target
 			);
-		const firstResult =
-			editor.edit(
-				original,
-				{
-					mode: 'lines',
-					start: target,
-					end: target,
-					expectedStart:
-						originalLine,
-					expectedEnd:
-						originalLine,
-					replacement:
-						this.#indent(
-							originalLine
-						) +
-						'// First session owns this local region.\n' +
-						originalLine
-				}
+		const workspace =
+			new MemoryWorkspace({
+				[path]: original
+			});
+		const git =
+			new MemoryGit({
+				workspace,
+				head: 'demo-head'
+			});
+		const splicemark =
+			new SplicemarkCore({
+				git,
+				store:
+					new MemorySessionStore(),
+				workspace
+			});
+		const first =
+			splicemark.start(
+				'Document peer return'
+			);
+		const second =
+			splicemark.start(
+				'Refine peer return'
 			);
 
-		registry.shift(
-			path,
-			firstResult.edit
-				.targetLineStart,
-			firstResult.edit
-				.targetLineEnd,
-			firstResult.edit.lineDelta,
-			head
-		);
-
-		store.recordEdit(
+		splicemark.edit(
 			first.id,
+			path,
 			{
-				path,
-				head,
-				locationStatus:
-					'current',
-				...firstResult.edit
+				mode: 'lines',
+				start: target,
+				end: target,
+				expectedStart:
+					originalLine,
+				expectedEnd:
+					originalLine,
+				replacement:
+					this.#indent(
+						originalLine
+					) +
+					'// First session owns this local region.\n' +
+					originalLine
 			}
 		);
 
+		const before =
+			workspace.read(path);
 		const secondTarget =
 			target + 1;
 		const secondLine =
 			this.#lineAt(
-				firstResult.content,
+				before,
 				secondTarget
 			);
-		const secondResult =
-			editor.edit(
-				firstResult.content,
+		const result =
+			splicemark.edit(
+				second.id,
+				path,
 				{
 					mode: 'lines',
 					start:
@@ -338,36 +373,26 @@ export default class LiveDemo {
 						' // second session'
 				}
 			);
-		const peers =
-			registry.find(
-				second.id,
-				path,
-				secondResult.edit
-					.targetLineStart,
-				secondResult.edit
-					.targetLineEnd,
-				head
-			);
+		const after =
+			workspace.read(path);
 
 		return {
 			id: 'peers',
 			title:
 				'Locally relevant peer edits',
-			file: path,
-			before:
-				firstResult.content,
-			after:
-				secondResult.content,
+			file: result.file,
+			before,
+			after,
 			output:
 				new Diff().format(
-					second,
-					path,
-					secondResult.edit,
-					peers
+					result.session,
+					result.file,
+					result.edit,
+					result.peers,
+					result.notes
 				),
 			focus: [
-				secondResult.edit
-					.lineStart
+				result.edit.lineStart
 			],
 			facts: [
 				[
@@ -377,7 +402,7 @@ export default class LiveDemo {
 				[
 					'peer edits surfaced',
 					String(
-						peers.length
+						result.peers.length
 					)
 				],
 				[
@@ -389,30 +414,16 @@ export default class LiveDemo {
 	}
 
 	async #notes({
-		TextEditor,
-		PeerRegistry,
+		SplicemarkCore,
+		MemoryWorkspace,
+		MemorySessionStore,
+		MemoryGit,
 		Diff
 	}) {
 		const file =
 			'PeerRegistry.js';
 		const path =
 			'src/' + file;
-		const head =
-			'demo-head';
-		const store =
-			new MemorySessionStore();
-		const registry =
-			new PeerRegistry(store);
-		const owner =
-			store.start(
-				'Protect local note scope',
-				head
-			);
-		const worker =
-			store.start(
-				'Clarify peer return',
-				head
-			);
 		const before =
 			await this.#source(file);
 		const target =
@@ -425,27 +436,47 @@ export default class LiveDemo {
 				before,
 				target
 			);
+		const workspace =
+			new MemoryWorkspace({
+				[path]: before
+			});
+		const git =
+			new MemoryGit({
+				workspace,
+				head: 'demo-head'
+			});
+		const splicemark =
+			new SplicemarkCore({
+				git,
+				store:
+					new MemorySessionStore(),
+				workspace
+			});
+		const owner =
+			splicemark.start(
+				'Protect local note scope'
+			);
+		const worker =
+			splicemark.start(
+				'Clarify peer return'
+			);
 
-		store.recordNote(
+		splicemark.note(
 			owner.id,
+			path,
 			{
-				path,
-				head,
 				mode: 'lines',
-				requestedStart:
-					target,
-				requestedEnd:
-					target,
-				lineStart: target,
-				lineEnd: target,
+				start: target,
+				end: target,
 				message:
 					'Keep this return scoped to locally relevant peers.'
 			}
 		);
 
 		const result =
-			new TextEditor().edit(
-				before,
+			splicemark.edit(
+				worker.id,
+				path,
 				{
 					mode: 'lines',
 					start: target,
@@ -459,31 +490,23 @@ export default class LiveDemo {
 						' // preserve local scope'
 				}
 			);
-		const notes =
-			registry.findNotes(
-				worker.id,
-				path,
-				result.edit
-					.targetLineStart,
-				result.edit
-					.targetLineEnd,
-				head
-			);
+		const after =
+			workspace.read(path);
 
 		return {
 			id: 'notes',
 			title:
 				'Code-bound coordination notes',
-			file: path,
+			file: result.file,
 			before,
-			after: result.content,
+			after,
 			output:
 				new Diff().format(
-					worker,
-					path,
+					result.session,
+					result.file,
 					result.edit,
-					[],
-					notes
+					result.peers,
+					result.notes
 				),
 			focus: [
 				result.edit.lineStart
@@ -496,7 +519,7 @@ export default class LiveDemo {
 				[
 					'notes surfaced',
 					String(
-						notes.length
+						result.notes.length
 					)
 				],
 				[
@@ -508,11 +531,15 @@ export default class LiveDemo {
 	}
 
 	async #reconcile({
-		TextEditor,
-		Reconciler
+		SplicemarkCore,
+		MemoryWorkspace,
+		MemorySessionStore,
+		MemoryGit
 	}) {
 		const file =
 			'Reconciler.js';
+		const path =
+			'src/' + file;
 		const before =
 			await this.#source(file);
 		const target =
@@ -525,9 +552,31 @@ export default class LiveDemo {
 				before,
 				target
 			);
-		const result =
-			new TextEditor().edit(
-				before,
+		const runtime = () => {
+			const workspace =
+				new MemoryWorkspace({
+					[path]: before
+				});
+			const git =
+				new MemoryGit({
+					workspace,
+					head: 'demo-head'
+				});
+			const splicemark =
+				new SplicemarkCore({
+					git,
+					store:
+						new MemorySessionStore(),
+					workspace
+				});
+			const session =
+				splicemark.start(
+					'Track authored mutation'
+				);
+
+			splicemark.edit(
+				session.id,
+				path,
 				{
 					mode: 'lines',
 					start: target,
@@ -541,65 +590,102 @@ export default class LiveDemo {
 						' // authored mutation'
 				}
 			);
-		const workingDiff =
-			this.#diffFor(
-				result.edit
-			);
-		const committedDiff =
-			this.#diffFor(
-				result.edit
-			);
-		const reconciler =
-			new Reconciler();
+
+			return {
+				workspace,
+				git,
+				splicemark,
+				session
+			};
+		};
+
+		const activeRuntime = runtime();
+
+		activeRuntime.workspace.write(
+			'other.txt',
+			'other\n'
+		);
+		activeRuntime.git.commit({
+			files: [
+				'other.txt'
+			]
+		});
+
 		const active =
-			reconciler.classify(
-				result.edit,
-				'',
-				workingDiff
-			);
+			activeRuntime.splicemark
+				.diff(
+					activeRuntime.session.id
+				)
+				.edits[0]
+				.status;
+		const after =
+			activeRuntime.workspace.read(path);
+
+		const retiredRuntime = runtime();
+
+		retiredRuntime.git.commit();
+
 		const retired =
-			reconciler.classify(
-				result.edit,
-				committedDiff,
-				''
-			);
+			retiredRuntime.splicemark
+				.diff(
+					retiredRuntime.session.id
+				)
+				.edits[0]
+				.status;
+
+		const staleRuntime = runtime();
+
+		staleRuntime.workspace.write(
+			path,
+			before
+		);
+		staleRuntime.workspace.write(
+			'other.txt',
+			'other\n'
+		);
+		staleRuntime.git.commit({
+			files: [
+				'other.txt'
+			]
+		});
+
 		const stale =
-			reconciler.classify(
-				result.edit,
-				committedDiff,
-				workingDiff
-			);
+			staleRuntime.splicemark
+				.diff(
+					staleRuntime.session.id
+				)
+				.edits[0]
+				.status;
 
 		return {
 			id: 'reconcile',
 			title:
 				'Git HEAD reconciliation',
-			file:
-				'src/' + file,
+			file: path,
 			before,
-			after: result.content,
+			after,
 			output: [
-				'Reconciler.classify(edit, committedDiff, workingDiff)',
+				'SplicemarkCore.diff(sessionId)',
 				'',
-				'working tree only  → ' +
+				'unrelated commit    → ' +
 					active,
-				'committed only     → ' +
+				'authored commit     → ' +
 					retired,
-				'both match         → ' +
+				'reverted + new HEAD → ' +
 					stale
 			].join('\n'),
 			focus: [target],
 			facts: [
 				[
-					'working only',
+					'unrelated commit',
 					active
 				],
 				[
-					'committed only',
+					'authored commit',
 					retired
 				],
 				[
-					'ambiguous',
+					'reverted before HEAD',
 					stale
 				]
 			]
@@ -615,36 +701,43 @@ export default class LiveDemo {
 				.toString(16)
 				.slice(2);
 		const [
-			textEditor,
-			peerRegistry,
-			reconciler,
+			splicemarkCore,
+			memoryWorkspace,
+			memorySessionStore,
+			memoryGit,
 			diff
 		] = await Promise.all([
 			import(
-				'./core/TextEditor.js' +
-				token
+				'./core/SplicemarkCore.js' +
+					token
 			),
 			import(
-				'./core/PeerRegistry.js' +
-				token
+				'./core/MemoryWorkspace.js' +
+					token
 			),
 			import(
-				'./core/Reconciler.js' +
-				token
+				'./core/MemorySessionStore.js' +
+					token
+			),
+			import(
+				'./core/MemoryGit.js' +
+					token
 			),
 			import(
 				'./core/Diff.js' +
-				token
+					token
 			)
 		]);
 
 		return {
-			TextEditor:
-				textEditor.default,
-			PeerRegistry:
-				peerRegistry.default,
-			Reconciler:
-				reconciler.default,
+			SplicemarkCore:
+				splicemarkCore.default,
+			MemoryWorkspace:
+				memoryWorkspace.default,
+			MemorySessionStore:
+				memorySessionStore.default,
+			MemoryGit:
+				memoryGit.default,
 			Diff:
 				diff.default
 		};
@@ -748,28 +841,4 @@ export default class LiveDemo {
 		);
 	}
 
-	#diffFor(edit) {
-		const removed =
-			edit.removed
-				.split(/\r?\n/)
-				.map(
-					line =>
-						'-' + line
-				)
-				.join('\n');
-		const inserted =
-			edit.inserted
-				.split(/\r?\n/)
-				.map(
-					line =>
-						'+' + line
-				)
-				.join('\n');
-
-		return [
-			'@@',
-			removed,
-			inserted
-		].filter(Boolean).join('\n');
-	}
 }

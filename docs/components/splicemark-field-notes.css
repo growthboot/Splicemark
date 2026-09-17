@@ -1,0 +1,288 @@
+:host {
+	display: block;
+	border-bottom: 1px solid var(--line);
+	background: #0d0e11;
+}
+
+.field-notes {
+	width: min(1200px, calc(100% - 48px));
+	margin: 0 auto;
+	padding: clamp(86px, 10vw, 132px) 0 clamp(82px, 9vw, 118px);
+}
+
+.heading {
+	display: grid;
+	grid-template-columns: 190px minmax(0, 1fr);
+	gap: 54px;
+	padding-bottom: 58px;
+	border-bottom: 1px solid var(--line);
+}
+
+.eyebrow,
+.label {
+	margin: 7px 0 0;
+	color: var(--accent);
+	font-family: var(--mono);
+	font-size: 10px;
+	font-weight: 700;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+}
+
+h2 {
+	max-width: 850px;
+	margin: 0;
+	font-size: clamp(48px, 6.7vw, 82px);
+	font-weight: 710;
+	line-height: 0.94;
+	letter-spacing: -0.062em;
+}
+
+h2 span {
+	display: block;
+	color: #858a94;
+}
+
+.lede {
+	max-width: 740px;
+	margin: 28px 0 0;
+	color: #9ca1aa;
+	font-size: clamp(17px, 1.8vw, 20px);
+	line-height: 1.65;
+}
+
+.workbench {
+	display: grid;
+	grid-template-columns: minmax(0, 0.9fr) minmax(420px, 1.1fr);
+	gap: 72px;
+	padding: 68px 0 64px;
+	border-bottom: 1px solid var(--line);
+}
+
+.story {
+	padding-left: 244px;
+}
+
+.story .label {
+	margin-left: -244px;
+	margin-bottom: 24px;
+}
+
+.statement {
+	margin: 0 0 28px;
+	color: #d8dadd;
+	font-size: clamp(23px, 2.6vw, 32px);
+	font-weight: 620;
+	line-height: 1.25;
+	letter-spacing: -0.035em;
+}
+
+.story > p:not(.label, .statement) {
+	margin: 0 0 20px;
+	color: #858a94;
+	font-size: 14px;
+	line-height: 1.78;
+}
+
+.scratchpad {
+	align-self: start;
+	border-top: 1px solid #343740;
+	border-bottom: 1px solid #343740;
+	font-family: var(--mono);
+}
+
+.scratchpad-head {
+	display: flex;
+	justify-content: space-between;
+	gap: 20px;
+	padding: 11px 0;
+	color: #555a64;
+	font-size: 9px;
+	font-weight: 700;
+	letter-spacing: 0.07em;
+	text-transform: uppercase;
+}
+
+.thought {
+	display: grid;
+	grid-template-columns: 58px minmax(0, 1fr);
+	gap: 18px;
+	padding: 18px 0;
+	border-top: 1px solid var(--line-soft);
+}
+
+.time {
+	padding-top: 2px;
+	color: #4f545e;
+	font-size: 9px;
+	text-transform: uppercase;
+}
+
+.thought strong {
+	color: #b8bbc2;
+	font-size: 11px;
+	font-weight: 650;
+}
+
+.thought p {
+	margin: 6px 0 0;
+	color: #666b75;
+	font-size: 10px;
+	line-height: 1.55;
+}
+
+.thought.signal,
+.thought.note {
+	position: relative;
+}
+
+.thought.signal::before,
+.thought.note::before {
+	position: absolute;
+	top: -1px;
+	left: 0;
+	width: 58px;
+	height: 1px;
+	background: var(--green);
+	content: "";
+}
+
+.thought.signal .time {
+	color: var(--green);
+}
+
+.thought.signal strong {
+	color: #b9d7c5;
+}
+
+.thought.note::before {
+	background: var(--accent);
+}
+
+.thought.note .time {
+	color: var(--accent);
+}
+
+.thought.note strong {
+	color: #c7c0e8;
+}
+
+.beats {
+	border-bottom: 1px solid var(--line);
+}
+
+.beat {
+	display: grid;
+	grid-template-columns: 58px 220px minmax(0, 1fr);
+	gap: 18px;
+	align-items: baseline;
+	padding: 19px 0;
+	border-top: 1px solid var(--line-soft);
+}
+
+.beat:first-child {
+	border-top: 0;
+}
+
+.number {
+	color: #4f545e;
+	font-family: var(--mono);
+	font-size: 9px;
+}
+
+.beat strong {
+	color: #c6c9cf;
+	font-size: 13px;
+}
+
+.beat p {
+	max-width: 670px;
+	margin: 0;
+	color: #737883;
+	font-size: 12px;
+	line-height: 1.68;
+}
+
+.closing {
+	max-width: 860px;
+	margin: 52px 0 0 244px;
+	color: #a6aab2;
+	font-size: clamp(20px, 2.4vw, 28px);
+	line-height: 1.48;
+	letter-spacing: -0.025em;
+}
+
+@media (max-width: 900px) {
+	.field-notes {
+		width: min(860px, calc(100% - 36px));
+	}
+
+	.heading {
+		grid-template-columns: 1fr;
+		gap: 18px;
+	}
+
+	.workbench {
+		grid-template-columns: 1fr;
+		gap: 46px;
+	}
+
+	.story {
+		padding-left: 0;
+	}
+
+	.story .label {
+		margin-left: 0;
+	}
+
+	.closing {
+		margin-left: 0;
+	}
+}
+
+@media (max-width: 620px) {
+	.field-notes {
+		width: min(100% - 28px, 860px);
+		padding-block: 66px 72px;
+	}
+
+	.heading {
+		padding-bottom: 42px;
+	}
+
+	h2 {
+		font-size: clamp(44px, 14vw, 66px);
+	}
+
+	.lede {
+		font-size: 16px;
+	}
+
+	.workbench {
+		padding-block: 48px;
+	}
+
+	.scratchpad-head {
+		display: grid;
+		gap: 5px;
+	}
+
+	.thought {
+		grid-template-columns: 44px minmax(0, 1fr);
+		gap: 12px;
+	}
+
+	.beat {
+		grid-template-columns: 34px minmax(0, 1fr);
+		gap: 8px 12px;
+	}
+
+	.beat p {
+		grid-column: 2;
+	}
+
+	.closing {
+		margin-top: 40px;
+		font-size: 20px;
+	}
+}

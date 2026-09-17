@@ -9,7 +9,11 @@ const projectRoot = path.resolve(
 );
 const root = path.join(projectRoot, 'docs');
 const liveCore = new Map([
+	['/runtime/core/SplicemarkCore.js', 'SplicemarkCore.js'],
 	['/runtime/core/TextEditor.js', 'TextEditor.js'],
+	['/runtime/core/MemoryWorkspace.js', 'MemoryWorkspace.js'],
+	['/runtime/core/MemorySessionStore.js', 'MemorySessionStore.js'],
+	['/runtime/core/MemoryGit.js', 'MemoryGit.js'],
 	['/runtime/core/PeerRegistry.js', 'PeerRegistry.js'],
 	['/runtime/core/Reconciler.js', 'Reconciler.js'],
 	['/runtime/core/Diff.js', 'Diff.js']

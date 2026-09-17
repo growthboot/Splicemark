@@ -143,12 +143,10 @@ class SplicemarkLiveExample extends HTMLElement {
 			</div>
 
 			<div class="runtime-note">
-				Executed now from the same
-				<code>TextEditor</code>,
-				<code>PeerRegistry</code>,
-				<code>Reconciler</code>, and
-				<code>Diff</code>
-				modules used by Splicemark where applicable.
+				Executed through the real
+				<code>SplicemarkCore</code>
+				using browser-only Git, workspace,
+				and session-store adapters.
 			</div>
 		`;
 	}

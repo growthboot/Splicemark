@@ -13,7 +13,11 @@ const destination = path.join(
 	'core'
 );
 const files = [
+	'SplicemarkCore.js',
 	'TextEditor.js',
+	'MemoryWorkspace.js',
+	'MemorySessionStore.js',
+	'MemoryGit.js',
 	'PeerRegistry.js',
 	'Reconciler.js',
 	'Diff.js'

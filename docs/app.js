@@ -1,3 +1,5 @@
+import './components/splicemark-hero.js';
+import './components/splicemark-field-notes.js';
 import './components/splicemark-live-example.js';
 
 const links = [
