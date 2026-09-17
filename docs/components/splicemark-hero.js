@@ -35,8 +35,8 @@ class SplicemarkHero extends HTMLElement {
 					<p class="summary">
 						A small CLI for coding agents working in the same Git
 						working tree. Splicemark records authorship when edits
-						happen, keeps review local to each task, and only surfaces
-						peer work when code overlaps.
+						happen, keeps review local to each task, and surfaces peer
+						work when active tasks share a file.
 					</p>
 
 					<div class="links" aria-label="Primary links">
@@ -54,69 +54,47 @@ class SplicemarkHero extends HTMLElement {
 
 				<div
 					class="trace"
-					aria-label="Unified working tree diff with Splicemark agent attribution"
+					aria-label="Terminal showing your changes and a peer's changes in one shared file"
 				>
 					<div class="trace-heading">
-						<span>working tree diff</span>
-						<span>splicemark attribution</span>
+						<span>terminal / attributed diff</span>
+						<span>same-file collision</span>
 					</div>
 
-					<div class="diff">
-						<div class="diff-file">
-							<span class="diff-status" aria-hidden="true">M</span>
-							<code>src/Reconciler.js</code>
+					<div class="terminal">
+						<div class="terminal-bar">
+							<div class="terminal-dots" aria-hidden="true">
+								<span></span>
+								<span></span>
+								<span></span>
+							</div>
+							<span class="terminal-title">shared working tree</span>
+							<span class="terminal-state">2 agents · 1 file</span>
 						</div>
 
-						<div class="diff-hunk">
-							<code>@@ -18,3 +18,5 @@ function reconcile(edits) {</code>
+						<div class="terminal-command">
+							<span class="prompt" aria-hidden="true">$</span>
+							<code>splicemark diff sm-7a14d9c2</code>
 						</div>
 
-						<div class="diff-row context">
-							<span class="diff-line">18</span>
-							<span class="diff-line">18</span>
-							<span class="diff-sign"></span>
-							<code>const ranges = collectRanges(edits);</code>
-							<span></span>
-						</div>
+						<div class="terminal-output">
+							<div class="output-block you">
+								<code class="output-line attribution">[YOU · sm-7a14d9c2 · Cache resolved handlers]</code>
+								<code class="output-line file">--- a/src/RequestPipeline.js</code>
+								<code class="output-line file">+++ b/src/RequestPipeline.js</code>
+								<code class="output-line hunk">@@ -450,1 +450,1 @@</code>
+								<code class="output-line removed">-    return resolveHandler(route);</code>
+								<code class="output-line added">+    return this.#handlerCache.get(route) ?? resolveHandler(route);</code>
+							</div>
 
-						<div class="diff-row removed">
-							<span class="diff-line">19</span>
-							<span class="diff-line"></span>
-							<span class="diff-sign">−</span>
-							<code>return applyEdits(ranges);</code>
-							<span class="agent-label agent-a">sm-a</span>
-						</div>
-
-						<div class="diff-row added">
-							<span class="diff-line"></span>
-							<span class="diff-line">19</span>
-							<span class="diff-sign">+</span>
-							<code>assertBoundaries(ranges);</code>
-							<span class="agent-label agent-a">sm-a</span>
-						</div>
-
-						<div class="diff-row added">
-							<span class="diff-line"></span>
-							<span class="diff-line">20</span>
-							<span class="diff-sign">+</span>
-							<code>markIntersections(ranges);</code>
-							<span class="agent-label agent-b">sm-b</span>
-						</div>
-
-						<div class="diff-row added">
-							<span class="diff-line"></span>
-							<span class="diff-line">21</span>
-							<span class="diff-sign">+</span>
-							<code>return applyEdits(ranges);</code>
-							<span class="agent-label agent-a">sm-a</span>
-						</div>
-
-						<div class="diff-row context">
-							<span class="diff-line">20</span>
-							<span class="diff-line">22</span>
-							<span class="diff-sign"></span>
-							<code>}</code>
-							<span></span>
+							<div class="output-block peer">
+								<code class="output-line attribution">[PEER · sm-0fd321bb · Validate request headers]</code>
+								<code class="output-line file">--- a/src/RequestPipeline.js</code>
+								<code class="output-line file">+++ b/src/RequestPipeline.js</code>
+								<code class="output-line hunk">@@ -100,1 +100,1 @@</code>
+								<code class="output-line removed">-    const headers = request.headers;</code>
+								<code class="output-line added">+    const headers = validateHeaders(request.headers);</code>
+							</div>
 						</div>
 					</div>
 				</div>
