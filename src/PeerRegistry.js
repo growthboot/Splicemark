@@ -5,7 +5,7 @@ export default class PeerRegistry {
 		this.#store = store;
 	}
 
-	find(sessionId, path, start, end, head) {
+	find(sessionId, path, head) {
 		const peers = [];
 
 		for (const session of this.#store.listSessions()) {
@@ -17,12 +17,7 @@ export default class PeerRegistry {
 				if (
 					(edit.status || 'active') !== 'active' ||
 					edit.path !== path ||
-					edit.locationStatus === 'overlapped' ||
-					!this.#belongsToHead(edit, head) ||
-					!Number.isInteger(edit.lineStart) ||
-					!Number.isInteger(edit.lineEnd) ||
-					edit.lineEnd < start ||
-					edit.lineStart > end
+					!this.#belongsToHead(edit, head)
 				) {
 					continue;
 				}

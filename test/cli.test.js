@@ -72,8 +72,61 @@ test('CLI start, edit, and diff use real newlines and task-local attribution', t
 	const diff = run(root, ['diff', session]);
 
 	assert.match(diff, /\[YOU · sm-[0-9a-f]{8} · Change source\]/);
-	assert.match(diff, /source\.txt · lines 1:1/);
+	assert.match(diff, /--- a\/source\.txt\n\+\+\+ b\/source\.txt/);
+	assert.match(diff, /@@ -2,1 \+2,1 @@/);
 	assert.match(diff, /-old\n\+new\n/);
+});
+
+test('CLI diff surfaces distant peer hunks from the same active file', t => {
+	const root = repository(t);
+	const content =
+		Array.from(
+			{ length: 500 },
+			(_, index) => 'line-' + index
+		).join('\n') + '\n';
+
+	fs.writeFileSync(path.join(root, 'source.txt'), content);
+	git(root, ['add', 'source.txt']);
+	git(root, ['commit', '-qm', 'expand source']);
+
+	const peer =
+		run(root, ['start', 'Change early region']).trim();
+	const requested =
+		run(root, ['start', 'Change distant region']).trim();
+
+	run(root, [
+		'edit',
+		peer,
+		'source.txt',
+		'--lines',
+		'99:99',
+		'--expect-start',
+		'line-99',
+		'--expect-end',
+		'line-99'
+	], 'peer-100\n');
+
+	run(root, [
+		'edit',
+		requested,
+		'source.txt',
+		'--lines',
+		'449:449',
+		'--expect-start',
+		'line-449',
+		'--expect-end',
+		'line-449'
+	], 'you-450\n');
+
+	const diff = run(root, ['diff', requested]);
+
+	assert.match(diff, /\[YOU · sm-[0-9a-f]{8} · Change distant region\]/);
+	assert.match(diff, /@@ -450,1 \+450,1 @@/);
+	assert.match(diff, /\+you-450/);
+	assert.match(diff, /\[PEER · sm-[0-9a-f]{8} · Change early region\]/);
+	assert.match(diff, /@@ -100,1 \+100,1 @@/);
+	assert.match(diff, /\+peer-100/);
+	assert.ok(diff.indexOf('[YOU ·') < diff.indexOf('[PEER ·'));
 });
 
 

@@ -168,8 +168,8 @@ test('CLI batch applies prevalidated JSON splices and records each mutation', t 
 	);
 
 	assert.equal(batch.status, 0, batch.stderr);
-	assert.match(batch.stdout, /lines 4:4/);
-	assert.match(batch.stdout, /lines 1:1/);
+	assert.match(batch.stdout, /@@ -5,1 \+5,1 @@/);
+	assert.match(batch.stdout, /@@ -2,1 \+2,2 @@/);
 
 	const diff = spawnSync(
 		process.execPath,
@@ -244,8 +244,18 @@ test('upper batch splices shift earlier batch authorship for later peer detectio
 		}
 	);
 
-	assert.equal(result.peers.length, 1);
-	assert.equal(result.peers[0].session.id, batchSession.id);
-	assert.equal(result.peers[0].edit.lineStart, 5);
-	assert.equal(result.peers[0].edit.lineEnd, 5);
+	assert.equal(result.peers.length, 2);
+
+	const shifted =
+		result.peers.find(peer => peer.edit.inserted === 'FOUR');
+
+	assert.ok(shifted);
+	assert.equal(shifted.session.id, batchSession.id);
+	assert.equal(shifted.edit.lineStart, 5);
+	assert.equal(shifted.edit.lineEnd, 5);
+	assert.ok(
+		result.peers.some(
+			peer => peer.edit.inserted === 'ONE\ninserted'
+		)
+	);
 });

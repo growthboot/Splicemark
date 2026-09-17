@@ -186,7 +186,11 @@ async function main() {
 
 		const result = splicemark.diff(sessionId);
 		process.stdout.write(
-			new Diff().formatSession(result.session, result.edits)
+			new Diff().formatSession(
+				result.session,
+				result.edits,
+				result.peers
+			)
 		);
 		return;
 	}

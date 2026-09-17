@@ -68,6 +68,12 @@ test('surfaces an overlapping active peer edit with task identity', t => {
 	assert.equal(result.peers[0].session.description, 'Change return shape');
 	assert.equal(result.peers[0].edit.inserted, 'agent-a');
 
+	const state = second.diff(b.id);
+
+	assert.equal(state.peers.length, 1);
+	assert.equal(state.peers[0].session.id, a.id);
+	assert.equal(state.peers[0].edit.locationStatus, 'overlapped');
+
 	const output = new Diff().format(
 		result.session,
 		result.file,
@@ -80,26 +86,90 @@ test('surfaces an overlapping active peer edit with task identity', t => {
 	assert.match(output, /\+agent-a/);
 });
 
-test('does not surface unrelated edits in the same file', t => {
-	const root = repository(t);
+test('surfaces distant edits in the same active file as peer collisions', t => {
+	const content =
+		Array.from(
+			{ length: 500 },
+			(_, index) => 'line-' + index
+		).join('\n') + '\n';
+	const root = repository(t, content);
 	const splicemark = new Splicemark({ cwd: root });
-	const a = splicemark.start('Change middle');
-	const b = splicemark.start('Change tail');
+	const a = splicemark.start('Change early region');
+	const b = splicemark.start('Change distant region');
 
-	edit(splicemark, a, root, 1, 1, 'old', 'old', 'middle');
+	edit(
+		splicemark,
+		a,
+		root,
+		100,
+		100,
+		'line-100',
+		'line-100',
+		'peer-100'
+	);
 
 	const result = edit(
 		splicemark,
 		b,
 		root,
-		3,
-		3,
-		'last',
-		'last',
-		'tail'
+		450,
+		450,
+		'line-450',
+		'line-450',
+		'you-450'
+	);
+
+	assert.equal(result.peers.length, 1);
+	assert.equal(result.peers[0].session.id, a.id);
+	assert.equal(result.peers[0].edit.lineStart, 100);
+	assert.equal(result.peers[0].edit.lineEnd, 100);
+
+	const state = splicemark.diff(b.id);
+	const output =
+		new Diff().formatSession(
+			state.session,
+			state.edits,
+			state.peers
+		);
+
+	assert.equal(state.peers.length, 1);
+	assert.match(output, /\[YOU · .* · Change distant region\]/);
+	assert.match(output, /@@ -451,1 \+451,1 @@/);
+	assert.match(output, /\+you-450/);
+	assert.match(output, /\[PEER · .* · Change early region\]/);
+	assert.match(output, /@@ -101,1 \+101,1 @@/);
+	assert.match(output, /\+peer-100/);
+});
+
+test('does not surface edits from a different file as peer collisions', t => {
+	const root = repository(t);
+	fs.writeFileSync(path.join(root, 'other.txt'), 'other-old\n');
+	git(root, ['add', 'other.txt']);
+	git(root, ['commit', '-qm', 'add other file']);
+
+	const splicemark = new Splicemark({ cwd: root });
+	const a = splicemark.start('Change source');
+	const b = splicemark.start('Change other');
+
+	edit(splicemark, a, root, 1, 1, 'old', 'old', 'source-new');
+
+	const result = splicemark.edit(
+		b.id,
+		path.join(root, 'other.txt'),
+		{
+			mode: 'lines',
+			start: 0,
+			end: 0,
+			expectedStart: 'other-old',
+			expectedEnd: 'other-old',
+			replacement: 'other-new'
+		}
 	);
 
 	assert.deepEqual(result.peers, []);
+
+	const state = splicemark.diff(b.id);
+	assert.deepEqual(state.peers, []);
 });
 
 test('shifts peer locations after an earlier line-count change', t => {
@@ -133,10 +203,15 @@ test('shifts peer locations after an earlier line-count change', t => {
 		'final-third'
 	);
 
-	assert.equal(result.peers.length, 1);
-	assert.equal(result.peers[0].session.id, a.id);
-	assert.equal(result.peers[0].edit.lineStart, 3);
-	assert.equal(result.peers[0].edit.lineEnd, 3);
+	assert.equal(result.peers.length, 2);
+
+	const shifted =
+		result.peers.find(peer => peer.session.id === a.id);
+
+	assert.ok(shifted);
+	assert.equal(shifted.edit.lineStart, 3);
+	assert.equal(shifted.edit.lineEnd, 3);
+	assert.ok(result.peers.some(peer => peer.session.id === b.id));
 });
 
 test('line edits detect peer authorship created through character edits', t => {
