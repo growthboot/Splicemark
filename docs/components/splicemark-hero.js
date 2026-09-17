@@ -54,37 +54,70 @@ class SplicemarkHero extends HTMLElement {
 
 				<div
 					class="trace"
-					aria-label="Authorship trace across one shared working tree"
+					aria-label="Unified working tree diff with Splicemark agent attribution"
 				>
 					<div class="trace-heading">
-						<span>mutation log</span>
-						<span>shared working tree</span>
+						<span>working tree diff</span>
+						<span>splicemark attribution</span>
 					</div>
 
-					<div class="trace-file">src/Reconciler.js</div>
+					<div class="diff">
+						<div class="diff-file">
+							<span class="diff-status" aria-hidden="true">M</span>
+							<code>src/Reconciler.js</code>
+						</div>
 
-					<div class="trace-row">
-						<span class="trace-line">018</span>
-						<span class="trace-mark agent-a"></span>
-						<code>sm-a records boundary-checked edit</code>
-					</div>
+						<div class="diff-hunk">
+							<code>@@ -18,3 +18,5 @@ function reconcile(edits) {</code>
+						</div>
 
-					<div class="trace-row active">
-						<span class="trace-line">019</span>
-						<span class="trace-mark agent-b"></span>
-						<code>sm-b touches intersecting range</code>
-					</div>
+						<div class="diff-row context">
+							<span class="diff-line">18</span>
+							<span class="diff-line">18</span>
+							<span class="diff-sign"></span>
+							<code>const ranges = collectRanges(edits);</code>
+							<span></span>
+						</div>
 
-					<div class="trace-row">
-						<span class="trace-line">020</span>
-						<span class="trace-mark git"></span>
-						<code>Git remains aggregate source of truth</code>
-					</div>
+						<div class="diff-row removed">
+							<span class="diff-line">19</span>
+							<span class="diff-line"></span>
+							<span class="diff-sign">−</span>
+							<code>return applyEdits(ranges);</code>
+							<span class="agent-label agent-a">sm-a</span>
+						</div>
 
-					<div class="trace-note">
-						<span>no daemon</span>
-						<span>no branch orchestration</span>
-						<span>no inferred authorship</span>
+						<div class="diff-row added">
+							<span class="diff-line"></span>
+							<span class="diff-line">19</span>
+							<span class="diff-sign">+</span>
+							<code>assertBoundaries(ranges);</code>
+							<span class="agent-label agent-a">sm-a</span>
+						</div>
+
+						<div class="diff-row added">
+							<span class="diff-line"></span>
+							<span class="diff-line">20</span>
+							<span class="diff-sign">+</span>
+							<code>markIntersections(ranges);</code>
+							<span class="agent-label agent-b">sm-b</span>
+						</div>
+
+						<div class="diff-row added">
+							<span class="diff-line"></span>
+							<span class="diff-line">21</span>
+							<span class="diff-sign">+</span>
+							<code>return applyEdits(ranges);</code>
+							<span class="agent-label agent-a">sm-a</span>
+						</div>
+
+						<div class="diff-row context">
+							<span class="diff-line">20</span>
+							<span class="diff-line">22</span>
+							<span class="diff-sign"></span>
+							<code>}</code>
+							<span></span>
+						</div>
 					</div>
 				</div>
 			</section>
