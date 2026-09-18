@@ -128,6 +128,7 @@ class SplicemarkHero extends HTMLElement {
 		return {
 			command: this.#result.command,
 			file: this.#result.file,
+			after: this.#result.after,
 			blocks: this.#result.output
 				.trim()
 				.split(/\n\s*\n/)
@@ -189,28 +190,36 @@ class SplicemarkHero extends HTMLElement {
 
 		return capture.blocks.map(block => `
 			<div class="output-block ${block.kind.toLowerCase()}">
-				${this.#outputLines(block.lines)}
+				${this.#outputLines(
+					block.lines,
+					capture.after
+				)}
 			</div>
 		`).join('');
 	}
 
-	#outputLines(lines) {
+	#outputLines(lines, after) {
 		let oldLine = null;
 		let newLine = null;
+		const displayLines =
+			this.#withContext(
+				lines,
+				after
+			);
 
-		return lines.map((line, index) => {
+		return displayLines.map((line, index) => {
 			const kind =
 				this.#lineClass(line, index);
 			const hunk =
 				line.match(
-					/^@@ -(\d+)(?:,\d+)? \+(\d+)(?:,\d+)? @@/
+					/^@@ -(\d+)(?:,(\d+))? \+(\d+)(?:,(\d+))? @@/
 				);
 			let oldNumber = '';
 			let newNumber = '';
 
 			if (hunk) {
 				oldLine = Number(hunk[1]);
-				newLine = Number(hunk[2]);
+				newLine = Number(hunk[3]);
 			} else if (kind === 'removed') {
 				oldNumber = oldLine ?? '';
 
@@ -244,6 +253,110 @@ class SplicemarkHero extends HTMLElement {
 				</div>
 			`;
 		}).join('');
+	}
+
+	#withContext(lines, after) {
+		if (typeof after !== 'string') {
+			return lines;
+		}
+
+		const hunkIndex =
+			lines.findIndex(
+				line => line.startsWith('@@')
+			);
+
+		if (hunkIndex === -1) {
+			return lines;
+		}
+
+		const hunk =
+			lines[hunkIndex].match(
+				/^@@ -(\d+)(?:,(\d+))? \+(\d+)(?:,(\d+))? @@(.*)$/
+			);
+
+		if (!hunk) {
+			return lines;
+		}
+
+		if (
+			lines
+				.slice(hunkIndex + 1)
+				.some(line => line.startsWith(' '))
+		) {
+			return lines;
+		}
+
+		const oldStart =
+			Number(hunk[1]);
+		const oldCount =
+			hunk[2] === undefined
+				? 1
+				: Number(hunk[2]);
+		const newStart =
+			Number(hunk[3]);
+		const newCount =
+			hunk[4] === undefined
+				? 1
+				: Number(hunk[4]);
+		const source =
+			after
+				.replace(/\n$/, '')
+				.split('\n');
+		const contextBefore =
+			Math.min(
+				2,
+				Math.max(0, oldStart - 1),
+				Math.max(0, newStart - 1)
+			);
+		const newEnd =
+			Math.max(
+				0,
+				newStart - 1 + newCount
+			);
+		const contextAfter =
+			Math.min(
+				2,
+				Math.max(
+					0,
+					source.length - newEnd
+				)
+			);
+		const before =
+			source
+				.slice(
+					Math.max(
+						0,
+						newStart - 1 - contextBefore
+					),
+					Math.max(0, newStart - 1)
+				)
+				.map(line => ' ' + line);
+		const afterContext =
+			source
+				.slice(
+					newEnd,
+					newEnd + contextAfter
+				)
+				.map(line => ' ' + line);
+		const expandedHeader =
+			'@@ -' +
+			(oldStart - contextBefore) +
+			',' +
+			(oldCount + contextBefore + contextAfter) +
+			' +' +
+			(newStart - contextBefore) +
+			',' +
+			(newCount + contextBefore + contextAfter) +
+			' @@' +
+			hunk[5];
+
+		return [
+			...lines.slice(0, hunkIndex),
+			expandedHeader,
+			...before,
+			...lines.slice(hunkIndex + 1),
+			...afterContext
+		];
 	}
 
 	#lineClass(line, index) {
