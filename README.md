@@ -65,6 +65,8 @@ Splicemark does not create branches, worktrees, commits, staging state, or merge
 
 `splicemark diff SESSION` shows that session's active authored changes. Normal `git diff` remains the aggregate working-tree view.
 
+Diff hunk coordinates and per-line old/new gutters are 0-based by default for agent and programmatic workflows. Use `--line-base=1` for conventional human/editor coordinates; `--line-base=0` is exactly equivalent to the default. The CLI also accepts the repository's conventional spaced option form, such as `--line-base 1`.
+
 When `HEAD` changes, committed authored changes are retired, still-uncommitted attributable changes may remain active, and ambiguous attribution becomes stale rather than being reassigned.
 
 ## Commands
@@ -77,7 +79,7 @@ splicemark batch SESSION FILE --lines < splices.json
 splicemark batch SESSION FILE --chars < splices.json
 splicemark note SESSION FILE --lines START:END --message TEXT
 splicemark note SESSION FILE --chars START:END --message TEXT
-splicemark diff SESSION
+splicemark diff SESSION [--line-base=0|1]
 splicemark finish SESSION
 splicemark clean
 ```

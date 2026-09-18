@@ -168,8 +168,8 @@ test('CLI batch applies prevalidated JSON splices and records each mutation', t 
 	);
 
 	assert.equal(batch.status, 0, batch.stderr);
-	assert.match(batch.stdout, /@@ -5,1 \+5,1 @@/);
-	assert.match(batch.stdout, /@@ -2,1 \+2,2 @@/);
+	assert.match(batch.stdout, /@@ -4,1 \+4,1 @@/);
+	assert.match(batch.stdout, /@@ -1,1 \+1,2 @@/);
 
 	const diff = spawnSync(
 		process.execPath,

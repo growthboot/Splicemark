@@ -88,7 +88,6 @@ h1 span {
 
 .demo-intro {
 	padding-bottom: 24px;
-	border-bottom: 1px solid var(--line);
 }
 
 
@@ -110,68 +109,8 @@ h1 span {
 	line-height: 1.65;
 }
 
-.demo-agents {
-	display: grid;
-	gap: 8px;
-	margin-top: 20px;
-}
-
-.demo-agent {
-	display: grid;
-	grid-template-columns: 8px 44px minmax(0, 1fr) auto;
-	gap: 9px;
-	align-items: center;
-	min-height: 27px;
-	font-family: var(--mono);
-	font-size: 12px;
-}
-
-.agent-dot {
-	width: 5px;
-	height: 5px;
-	border-radius: 50%;
-}
-
-.demo-agent.you .agent-dot {
-	background: var(--accent);
-	box-shadow: 0 0 12px rgba(167, 139, 250, 0.55);
-}
-
-.demo-agent.peer .agent-dot {
-	background: var(--green);
-	box-shadow: 0 0 12px rgba(101, 216, 120, 0.45);
-}
-
-.agent-kind {
-	font-size: 11px;
-	font-weight: 800;
-	letter-spacing: 0.06em;
-	text-transform: uppercase;
-}
-
-.demo-agent.you .agent-kind {
-	color: var(--accent);
-}
-
-.demo-agent.peer .agent-kind {
-	color: var(--green);
-}
-
-.agent-task {
-	overflow: hidden;
-	color: #7d838e;
-	text-overflow: ellipsis;
-	white-space: nowrap;
-}
-
-.demo-agent code {
-	color: #555c67;
-	font-family: inherit;
-	font-size: inherit;
-}
 
 .terminal {
-	margin-top: 24px;
 	overflow: hidden;
 	border: 1px solid var(--line);
 	background: #090b10;
@@ -376,14 +315,6 @@ h1 span {
 		font-size: 28px;
 	}
 
-	.demo-agents {
-		gap: 6px;
-	}
-
-	.demo-agent {
-		grid-template-columns: 8px 40px minmax(0, 1fr) auto;
-		gap: 7px;
-	}
 
 	.terminal {
 		margin-top: 20px;

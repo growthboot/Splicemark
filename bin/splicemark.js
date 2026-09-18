@@ -14,6 +14,36 @@ function option(args, name) {
 	return args[index + 1];
 }
 
+function diffLineBase(args) {
+	const inline =
+		args.filter(arg => arg.startsWith('--line-base='));
+	const separateIndex =
+		args.indexOf('--line-base');
+
+	if (
+		inline.length > 1 ||
+		(inline.length === 1 && separateIndex !== -1)
+	) {
+		throw new Error('--line-base may be specified once');
+	}
+
+	if (inline.length === 1) {
+		const value =
+			inline[0].slice('--line-base='.length);
+
+		return value;
+	}
+
+	if (separateIndex !== -1) {
+		const value =
+			option(args, '--line-base');
+
+		return value;
+	}
+
+	return 0;
+}
+
 function range(value) {
 	const match = /^(\d+):(\d+)$/.exec(value);
 
@@ -178,15 +208,20 @@ async function main() {
 	}
 
 	if (command === 'diff') {
-		const [sessionId] = args;
+		const [sessionId, ...flags] = args;
 
 		if (!sessionId) {
 			throw new Error('diff requires SESSION');
 		}
 
+		const diff =
+			new Diff({
+				lineBase: diffLineBase(flags)
+			});
 		const result = splicemark.diff(sessionId);
+
 		process.stdout.write(
-			new Diff().formatSession(
+			diff.formatSession(
 				result.session,
 				result.edits,
 				result.peers
@@ -205,9 +240,11 @@ async function main() {
 			'  splicemark batch SESSION FILE --chars < splices.json\n' +
 			'  splicemark note SESSION FILE --lines START:END --message TEXT\n' +
 			'  splicemark note SESSION FILE --chars START:END --message TEXT\n' +
-			'  splicemark diff SESSION\n' +
+			'  splicemark diff SESSION [--line-base=0|1]\n' +
 			'  splicemark finish SESSION\n' +
-			'  splicemark clean\n'
+			'  splicemark clean\n\n' +
+			'Diff options:\n' +
+			'  --line-base=0|1  Source coordinates: 0 (default, agent/programmatic), 1 (human/editor)\n'
 		);
 		return;
 	}

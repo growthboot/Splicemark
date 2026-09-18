@@ -134,14 +134,14 @@ test('surfaces distant edits in the same active file as peer collisions', t => {
 
 	assert.equal(state.peers.length, 1);
 	assert.match(output, /\[YOU · .* · Change distant region\]/);
-	assert.match(output, /@@ -451,1 \+451,1 @@/);
+	assert.match(output, /@@ -450,1 \+450,1 @@/);
 	assert.match(output, /\+you-450/);
 	assert.match(output, /\[PEER · .* · Change early region\]/);
-	assert.match(output, /@@ -101,1 \+101,1 @@/);
+	assert.match(output, /@@ -100,1 \+100,1 @@/);
 	assert.match(output, /\+peer-100/);
 	assert.ok(
-		output.indexOf('@@ -101,1 +101,1 @@') <
-		output.indexOf('@@ -451,1 +451,1 @@')
+		output.indexOf('@@ -100,1 +100,1 @@') <
+		output.indexOf('@@ -450,1 +450,1 @@')
 	);
 });
 

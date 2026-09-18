@@ -90,12 +90,6 @@ class SplicemarkHero extends HTMLElement {
 							changing what and where.
 						</p>
 
-						<div
-							class="demo-agents"
-							aria-label="Active authors in ${this.#escape(capture?.file || 'shared file')}"
-						>
-							${this.#agents(capture)}
-						</div>
 					</div>
 
 					<div class="terminal">
@@ -158,20 +152,6 @@ class SplicemarkHero extends HTMLElement {
 		};
 	}
 
-	#agents(capture) {
-		if (!capture) {
-			return '';
-		}
-
-		return capture.blocks.map(block => `
-			<div class="demo-agent ${block.kind.toLowerCase()}">
-				<span class="agent-dot" aria-hidden="true"></span>
-				<span class="agent-kind">${this.#escape(block.kind)}</span>
-				<span class="agent-task">${this.#escape(block.task)}</span>
-				<code>${block.line === null ? '' : `line ${block.line}`}</code>
-			</div>
-		`).join('');
-	}
 
 	#output(capture) {
 		if (!capture) {

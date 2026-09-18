@@ -66,15 +66,65 @@ test('CLI start, edit, and diff use real newlines and task-local attribution', t
 	], 'new\n');
 
 	assert.match(edit, /\[YOU · sm-[0-9a-f]{8} · Change source\]/);
-	assert.match(edit, /-old\n\+new\n/);
+	assert.match(edit, /-old/);
+	assert.match(edit, /\+new/);
 	assert.equal(fs.readFileSync(path.join(root, 'source.txt'), 'utf8'), 'zero\nnew\nlast\n');
 
 	const diff = run(root, ['diff', session]);
+	const expectedDefault =
+		'[YOU · ' + session + ' · Change source]\n' +
+		'--- a/source.txt\n' +
+		'+++ b/source.txt\n' +
+		'@@ -1,1 +1,1 @@\n' +
+		'1   -old\n' +
+		'  1 +new\n';
 
-	assert.match(diff, /\[YOU · sm-[0-9a-f]{8} · Change source\]/);
-	assert.match(diff, /--- a\/source\.txt\n\+\+\+ b\/source\.txt/);
-	assert.match(diff, /@@ -2,1 \+2,1 @@/);
-	assert.match(diff, /-old\n\+new\n/);
+	assert.equal(diff, expectedDefault);
+
+	const explicitZero =
+		run(root, ['diff', session, '--line-base=0']);
+
+	assert.equal(explicitZero, diff);
+
+	const oneBased =
+		run(root, ['diff', session, '--line-base=1']);
+	const expectedOneBased =
+		'[YOU · ' + session + ' · Change source]\n' +
+		'--- a/source.txt\n' +
+		'+++ b/source.txt\n' +
+		'@@ -2,1 +2,1 @@\n' +
+		'2   -old\n' +
+		'  2 +new\n';
+
+	assert.equal(oneBased, expectedOneBased);
+	assert.equal(
+		run(root, ['diff', session, '--line-base', '1']),
+		oneBased
+	);
+});
+
+test('CLI diff rejects invalid line bases', t => {
+	const root = repository(t);
+	const session =
+		run(root, ['start', 'Invalid line base']).trim();
+
+	for (const value of ['2', '-1', 'foo', '01']) {
+		const result = spawnSync(
+			process.execPath,
+			[cli, 'diff', session, '--line-base=' + value],
+			{
+				cwd: root,
+				encoding: 'utf8'
+			}
+		);
+
+		assert.equal(result.status, 1);
+		assert.equal(result.stdout, '');
+		assert.equal(
+			result.stderr,
+			'splicemark: lineBase must be 0 or 1\n'
+		);
+	}
 });
 
 test('CLI diff surfaces distant peer hunks from the same active file', t => {
@@ -118,14 +168,17 @@ test('CLI diff surfaces distant peer hunks from the same active file', t => {
 		'line-449'
 	], 'you-450\n');
 
-	const diff = run(root, ['diff', requested]);
+	const diff =
+		run(root, ['diff', requested, '--line-base=1']);
 
 	assert.match(diff, /\[YOU · sm-[0-9a-f]{8} · Change distant region\]/);
 	assert.match(diff, /@@ -450,1 \+450,1 @@/);
-	assert.match(diff, /\+you-450/);
+	assert.match(diff, /^450 {5}-line-449$/m);
+	assert.match(diff, /^ {4}450 \+you-450$/m);
 	assert.match(diff, /\[PEER · sm-[0-9a-f]{8} · Change early region\]/);
 	assert.match(diff, /@@ -100,1 \+100,1 @@/);
-	assert.match(diff, /\+peer-100/);
+	assert.match(diff, /^100 {5}-line-99$/m);
+	assert.match(diff, /^ {4}100 \+peer-100$/m);
 	assert.ok(
 		diff.indexOf('@@ -100,1 +100,1 @@') <
 		diff.indexOf('@@ -450,1 +450,1 @@')
@@ -178,7 +231,11 @@ test('CLI note, finish, clean, and help complete the agent lifecycle', t => {
 	assert.match(help, /splicemark start/);
 	assert.match(help, /splicemark edit/);
 	assert.match(help, /splicemark note/);
-	assert.match(help, /splicemark diff/);
+	assert.match(help, /splicemark diff SESSION \[--line-base=0\|1\]/);
+	assert.match(
+		help,
+		/0 \(default, agent\/programmatic\), 1 \(human\/editor\)/
+	);
 	assert.match(help, /splicemark finish/);
 	assert.match(help, /splicemark clean/);
 });
