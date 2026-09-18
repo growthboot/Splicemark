@@ -181,65 +181,46 @@ button:disabled {
 }
 
 .output {
-	padding: 10px 0;
+	padding: 10px 12px;
 	color: #858a94;
+	font: 9.5px/1.55 var(--mono);
+	white-space: pre;
 }
 
 .output-line {
-	display: grid;
-	grid-template-columns: 36px 36px minmax(0, 1fr);
-	min-height: 1.55em;
-	padding-right: 12px;
+	display: inline-block;
+	min-width: 100%;
 }
 
-.output-line .line-number {
-	box-sizing: border-box;
-	padding-right: 8px;
-	color: #3f434b;
-	text-align: right;
-	user-select: none;
-}
-
-.output-line .line-number.new {
-	margin-right: 10px;
-	border-right: 1px solid #1d2026;
-}
-
-.output-line code {
-	color: inherit;
-	overflow-wrap: anywhere;
-	white-space: pre-wrap;
-}
-
-.output-line.plus code {
+.output-line.plus {
 	color: #75be91;
 }
 
-.output-line.minus code {
+.output-line.minus {
 	color: #d1828e;
 }
 
-.output-line.you code {
+.output-line.you {
 	color: #aaa0df;
 }
 
-.output-line.peer code {
+.output-line.peer {
 	color: #d992aa;
 }
 
-.output-line.note code {
+.output-line.note {
 	color: #d2ad67;
 }
 
-.output-line.stale code {
+.output-line.stale {
 	color: #cfa56d;
 }
 
-.output-line.hunk code {
+.output-line.hunk {
 	color: #7770b8;
 }
 
-.output-line.file code {
+.output-line.file {
 	color: #666b74;
 }
 

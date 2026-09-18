@@ -175,73 +175,47 @@ h1 span {
 	padding: 14px 0 16px;
 }
 
-.output-block {
+.output-transcript {
 	min-width: 540px;
+	margin: 0;
 	padding: 0 14px;
-}
-
-.output-block + .output-block {
-	margin-top: 16px;
-	padding-top: 16px;
-	border-top: 1px solid var(--line-soft);
-}
-
-.output-line {
-	display: grid;
-	grid-template-columns: 36px 36px minmax(0, 1fr);
-	box-sizing: border-box;
-	min-height: 22px;
-	margin-inline: -14px;
-	padding-right: 14px;
 	color: #a6abb4;
 	font-family: var(--mono);
 	font-size: 13px;
 	line-height: 1.65;
-}
-
-.output-line .line-number {
-	box-sizing: border-box;
-	padding-right: 8px;
-	color: #484d56;
-	text-align: right;
-	user-select: none;
-}
-
-.output-line .line-number.new {
-	margin-right: 10px;
-	border-right: 1px solid #20242b;
-}
-
-.output-line code {
-	min-width: 0;
-	color: inherit;
-	font: inherit;
 	white-space: pre;
 }
 
+.output-line {
+	display: inline-block;
+	min-width: 100%;
+}
+
 .output-line.attribution {
-	margin-bottom: 5px;
 	font-weight: 800;
 }
 
-.output-block.you .attribution code {
+.output-line.you {
 	color: var(--accent);
 }
 
-.output-block.peer .attribution code {
+.output-line.peer {
 	color: var(--green);
 }
 
-.output-line.file code {
+.output-line.note {
+	color: #d2ad67;
+}
+
+.output-line.stale {
+	color: #cfa56d;
+}
+
+.output-line.file {
 	color: #777d87;
 }
 
 .output-line.hunk {
-	margin-top: 3px;
-	margin-bottom: 3px;
-}
-
-.output-line.hunk code {
 	color: #9189dd;
 }
 
@@ -250,17 +224,9 @@ h1 span {
 	background: rgba(248, 81, 73, 0.075);
 }
 
-.output-line.removed .line-number.old {
-	color: #8e5555;
-}
-
 .output-line.added {
 	color: #65d878;
 	background: rgba(46, 160, 67, 0.09);
-}
-
-.output-line.added .line-number.new {
-	color: #477e52;
 }
 
 @media (max-width: 900px) {

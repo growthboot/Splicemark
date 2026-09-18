@@ -262,81 +262,69 @@ class SplicemarkLiveExample extends HTMLElement {
 	}
 
 	#output() {
-		let oldLine = null;
-		let newLine = null;
-
 		return this.#result.output
 			.split('\n')
 			.map(line => {
-				let kind = '';
-				let oldNumber = '';
-				let newNumber = '';
-				const hunk =
-					line.match(
-						/^@@ -(\d+)(?:,\d+)? \+(\d+)(?:,\d+)? @@/
-					);
+				const kind =
+					this.#outputLineClass(line);
 
-				if (hunk) {
-					kind = 'hunk';
-					oldLine = Number(hunk[1]);
-					newLine = Number(hunk[2]);
-				} else if (
-					line.startsWith('--- ') ||
-					line.startsWith('+++ ')
-				) {
-					kind = 'file';
-				} else if (line.startsWith('+')) {
-					kind = 'plus';
-					newNumber = newLine ?? '';
-					if (newLine !== null) {
-						newLine++;
-					}
-				} else if (line.startsWith('-')) {
-					kind = 'minus';
-					oldNumber = oldLine ?? '';
-					if (oldLine !== null) {
-						oldLine++;
-					}
-				} else if (line.startsWith(' ')) {
-					kind = 'context';
-					oldNumber = oldLine ?? '';
-					newNumber = newLine ?? '';
-					if (oldLine !== null) {
-						oldLine++;
-					}
-					if (newLine !== null) {
-						newLine++;
-					}
-				} else if (
-					line.startsWith('[YOU')
-				) {
-					kind = 'you';
-				} else if (
-					line.startsWith('[PEER NOTE')
-				) {
-					kind = 'note';
-				} else if (
-					line.startsWith('[PEER')
-				) {
-					kind = 'peer';
-				} else if (
-					line.startsWith('[STALE')
-				) {
-					kind = 'stale';
-				}
-
-				return `
-					<div class="output-line ${kind}">
-						<span class="line-number old" aria-hidden="true">${oldNumber}</span>
-						<span class="line-number new" aria-hidden="true">${newNumber}</span>
-						<code>${
-							this.#escape(line) ||
-							'&nbsp;'
-						}</code>
-					</div>
-				`;
+				return (
+					'<span class="output-line ' +
+					kind +
+					'">' +
+					this.#escape(line) +
+					'</span>'
+				);
 			})
-			.join('');
+			.join('\n');
+	}
+
+	#outputLineClass(line) {
+		if (line.startsWith('[YOU')) {
+			return 'you';
+		}
+
+		if (line.startsWith('[PEER NOTE')) {
+			return 'note';
+		}
+
+		if (line.startsWith('[PEER')) {
+			return 'peer';
+		}
+
+		if (line.startsWith('[STALE')) {
+			return 'stale';
+		}
+
+		if (
+			line.startsWith('--- ') ||
+			line.startsWith('+++ ')
+		) {
+			return 'file';
+		}
+
+		if (line.startsWith('@@')) {
+			return 'hunk';
+		}
+
+		const content =
+			line.match(
+				/^([ 0-9]+) ([ 0-9]+) ([+\- ])/
+			);
+
+		if (content?.[3] === '+') {
+			return 'plus';
+		}
+
+		if (content?.[3] === '-') {
+			return 'minus';
+		}
+
+		if (content?.[3] === ' ') {
+			return 'context';
+		}
+
+		return '';
 	}
 
 	#escape(value) {

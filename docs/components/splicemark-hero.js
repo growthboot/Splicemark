@@ -82,12 +82,12 @@ class SplicemarkHero extends HTMLElement {
 				>
 					<div class="demo-intro">
 
-						<h2>Two agents. One shared file.</h2>
+						<h2>Stay collision-aware while you code.</h2>
 
 						<p class="demo-description">
-							When two agents work in the same file, Splicemark makes that shared
-							work visible with labeled change blocks. Each agent can see who is
-							changing what and where.
+							The agent runs <code>splicemark diff</code> for its session.
+							The terminal below shows the literal output it receives,
+							including active peer work in the same file.
 						</p>
 
 					</div>
@@ -121,239 +121,63 @@ class SplicemarkHero extends HTMLElement {
 
 		return {
 			command: this.#result.command,
-			file: this.#result.file,
-			after: this.#result.after,
-			blocks: this.#result.output
-				.trim()
-				.split(/\n\s*\n/)
-				.map(section => this.#block(section))
-				.filter(Boolean)
-		};
-	}
-
-	#block(section) {
-		const lines = section.split('\n');
-		const attribution = lines[0]?.match(
-			/^\[(YOU|PEER) · ([^·]+) · (.+)\]$/
-		);
-
-		if (!attribution) {
-			return null;
-		}
-
-		const hunk = lines.find(line => line.startsWith('@@'));
-		const location = hunk?.match(/^@@ -(\d+)/);
-
-		return {
-			kind: attribution[1],
-			task: attribution[3],
-			line: location ? Number(location[1]) : null,
-			lines
+			output: this.#result.output
 		};
 	}
 
 
 	#output(capture) {
-		if (!capture) {
-			return `
-				<div class="output-block">
-					<div class="output-line">
-						<span class="line-number old" aria-hidden="true"></span>
-						<span class="line-number new" aria-hidden="true"></span>
-						<code>${this.#escape(
-							this.#error || 'Executing current Splicemark modules…'
-						)}</code>
-					</div>
-				</div>
-			`;
-		}
+		const output =
+			capture?.output ??
+			this.#error ??
+			'Executing current Splicemark modules…';
 
-		return capture.blocks.map(block => `
-			<div class="output-block ${block.kind.toLowerCase()}">
-				${this.#outputLines(
-					block.lines,
-					capture.after
-				)}
-			</div>
-		`).join('');
+		return (
+			'<pre class="output-transcript">' +
+			this.#highlightOutput(output) +
+			'</pre>'
+		);
 	}
 
-	#outputLines(lines, after) {
-		let oldLine = null;
-		let newLine = null;
-		const displayLines =
-			this.#withContext(
-				lines,
-				after
-			);
+	#highlightOutput(output) {
+		return output
+			.split('\n')
+			.map(line => {
+				const kind =
+					this.#lineClass(line);
 
-		return displayLines.map((line, index) => {
-			const kind =
-				this.#lineClass(line, index);
-			const hunk =
-				line.match(
-					/^@@ -(\d+)(?:,(\d+))? \+(\d+)(?:,(\d+))? @@/
+				return (
+					'<span class="output-line ' +
+					kind +
+					'">' +
+					this.#escape(line) +
+					'</span>'
 				);
-			let oldNumber = '';
-			let newNumber = '';
-
-			if (hunk) {
-				oldLine = Number(hunk[1]);
-				newLine = Number(hunk[3]);
-			} else if (kind === 'removed') {
-				oldNumber = oldLine ?? '';
-
-				if (oldLine !== null) {
-					oldLine++;
-				}
-			} else if (kind === 'added') {
-				newNumber = newLine ?? '';
-
-				if (newLine !== null) {
-					newLine++;
-				}
-			} else if (line.startsWith(' ')) {
-				oldNumber = oldLine ?? '';
-				newNumber = newLine ?? '';
-
-				if (oldLine !== null) {
-					oldLine++;
-				}
-
-				if (newLine !== null) {
-					newLine++;
-				}
-			}
-
-			return `
-				<div class="output-line ${kind}">
-					<span class="line-number old" aria-hidden="true">${oldNumber}</span>
-					<span class="line-number new" aria-hidden="true">${newNumber}</span>
-					<code>${this.#escape(line) || '&nbsp;'}</code>
-				</div>
-			`;
-		}).join('');
+			})
+			.join('\n');
 	}
 
-	#withContext(lines, after) {
-		if (typeof after !== 'string') {
-			return lines;
+	#lineClass(line) {
+		if (line.startsWith('[YOU')) {
+			return 'you attribution';
 		}
 
-		const hunkIndex =
-			lines.findIndex(
-				line => line.startsWith('@@')
-			);
-
-		if (hunkIndex === -1) {
-			return lines;
+		if (line.startsWith('[PEER NOTE')) {
+			return 'note attribution';
 		}
 
-		const hunk =
-			lines[hunkIndex].match(
-				/^@@ -(\d+)(?:,(\d+))? \+(\d+)(?:,(\d+))? @@(.*)$/
-			);
+		if (line.startsWith('[PEER')) {
+			return 'peer attribution';
+		}
 
-		if (!hunk) {
-			return lines;
+		if (line.startsWith('[STALE')) {
+			return 'stale attribution';
 		}
 
 		if (
-			lines
-				.slice(hunkIndex + 1)
-				.some(line => line.startsWith(' '))
+			line.startsWith('--- ') ||
+			line.startsWith('+++ ')
 		) {
-			return lines;
-		}
-
-		const oldStart =
-			Number(hunk[1]);
-		const oldCount =
-			hunk[2] === undefined
-				? 1
-				: Number(hunk[2]);
-		const newStart =
-			Number(hunk[3]);
-		const newCount =
-			hunk[4] === undefined
-				? 1
-				: Number(hunk[4]);
-		const source =
-			after
-				.replace(/\n$/, '')
-				.split('\n');
-		const contextBefore =
-			Math.min(
-				2,
-				Math.max(0, oldStart - 1),
-				Math.max(0, newStart - 1)
-			);
-		const newEnd =
-			Math.max(
-				0,
-				newStart - 1 + newCount
-			);
-		const contextAfter =
-			Math.min(
-				2,
-				Math.max(
-					0,
-					source.length - newEnd
-				)
-			);
-		const before =
-			source
-				.slice(
-					Math.max(
-						0,
-						newStart - 1 - contextBefore
-					),
-					Math.max(0, newStart - 1)
-				)
-				.map(line => ' ' + line);
-		const afterContext =
-			source
-				.slice(
-					newEnd,
-					newEnd + contextAfter
-				)
-				.map(line => ' ' + line);
-		const file =
-			lines.find(
-				line => line.startsWith('+++ b/')
-			)?.slice(6) ||
-			lines.find(
-				line => line.startsWith('--- a/')
-			)?.slice(6) ||
-			'';
-		const expandedHeader =
-			'@@ -' +
-			(oldStart - contextBefore) +
-			',' +
-			(oldCount + contextBefore + contextAfter) +
-			' +' +
-			(newStart - contextBefore) +
-			',' +
-			(newCount + contextBefore + contextAfter) +
-			' @@' +
-			hunk[5] +
-			(file ? ' ' + file : '');
-
-		return [
-			lines[0],
-			expandedHeader,
-			...before,
-			...lines.slice(hunkIndex + 1),
-			...afterContext
-		];
-	}
-
-	#lineClass(line, index) {
-		if (index === 0) {
-			return 'attribution';
-		}
-
-		if (line.startsWith('--- ') || line.startsWith('+++ ')) {
 			return 'file';
 		}
 
@@ -361,12 +185,21 @@ class SplicemarkHero extends HTMLElement {
 			return 'hunk';
 		}
 
-		if (line.startsWith('-')) {
+		const content =
+			line.match(
+				/^([ 0-9]+) ([ 0-9]+) ([+\- ])/
+			);
+
+		if (content?.[3] === '-') {
 			return 'removed';
 		}
 
-		if (line.startsWith('+')) {
+		if (content?.[3] === '+') {
 			return 'added';
+		}
+
+		if (content?.[3] === ' ') {
+			return 'context';
 		}
 
 		return '';
