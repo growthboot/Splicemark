@@ -193,3 +193,213 @@ test('peer note line metadata uses the selected coordinate base', () => {
 
 	assert.match(output, /source\.txt · lines 5:6\nKeep stable\./);
 });
+
+
+test('context defaults to zero and explicit zero is byte-identical', () => {
+	const edit =
+		authored({
+			lineStart: 2,
+			lineEnd: 2,
+			appliedStart: 2,
+			removed: 'old',
+			inserted: 'new'
+		});
+	const sources = {
+		'source.txt': 'zero\none\nnew\nthree\nfour\n'
+	};
+	const implicit =
+		new Diff().formatSession(session, [edit]);
+	const explicit =
+		new Diff({ context: 0 }).formatSession(
+			session,
+			[edit],
+			[],
+			sources
+		);
+
+	assert.equal(explicit, implicit);
+});
+
+test('replacement context expands truthful hunks and shifts with lineBase', () => {
+	const edit =
+		authored({
+			lineStart: 2,
+			lineEnd: 2,
+			appliedStart: 2,
+			removed: 'old',
+			inserted: 'new'
+		});
+	const sources = {
+		'source.txt':
+			'zero\none\nnew\nthree\nfour\nfive\n'
+	};
+	const zeroBased =
+		new Diff({ context: 2 }).formatSession(
+			session,
+			[edit],
+			[],
+			sources
+		);
+	const oneBased =
+		new Diff({
+			context: 2,
+			lineBase: 1
+		}).formatSession(
+			session,
+			[edit],
+			[],
+			sources
+		);
+
+	assert.equal(
+		zeroBased,
+		'[YOU · sm-current · Change source]\n' +
+		'--- a/source.txt\n' +
+		'+++ b/source.txt\n' +
+		'@@ -0,5 +0,5 @@\n' +
+		'0 0  zero\n' +
+		'1 1  one\n' +
+		'2   -old\n' +
+		'  2 +new\n' +
+		'3 3  three\n' +
+		'4 4  four\n'
+	);
+	assert.equal(
+		oneBased,
+		'[YOU · sm-current · Change source]\n' +
+		'--- a/source.txt\n' +
+		'+++ b/source.txt\n' +
+		'@@ -1,5 +1,5 @@\n' +
+		'1 1  zero\n' +
+		'2 2  one\n' +
+		'3   -old\n' +
+		'  3 +new\n' +
+		'4 4  three\n' +
+		'5 5  four\n'
+	);
+});
+
+test('context stops at real file boundaries', () => {
+	const beginning =
+		new Diff({ context: 4 }).formatSession(
+			session,
+			[
+				authored({
+					lineStart: 0,
+					lineEnd: 0,
+					appliedStart: 0,
+					removed: 'old',
+					inserted: 'new'
+				})
+			],
+			[],
+			{
+				'source.txt': 'new\none\ntwo\n'
+			}
+		);
+	const end =
+		new Diff({ context: 4 }).formatSession(
+			session,
+			[
+				authored({
+					lineStart: 2,
+					lineEnd: 2,
+					appliedStart: 2,
+					removed: 'old',
+					inserted: 'new'
+				})
+			],
+			[],
+			{
+				'source.txt': 'zero\none\nnew\n'
+			}
+		);
+
+	assert.match(
+		beginning,
+		/@@ -0,3 \+0,3 @@\n0   -old\n  0 \+new\n1 1  one\n2 2  two\n$/
+	);
+	assert.match(
+		end,
+		/@@ -0,3 \+0,3 @@\n0 0  zero\n1 1  one\n2   -old\n  2 \+new\n$/
+	);
+});
+
+test('insertion and deletion context advance old and new coordinates independently', () => {
+	const insertion =
+		new Diff({ context: 1 }).formatSession(
+			session,
+			[
+				authored({
+					lineStart: 2,
+					lineEnd: 2,
+					appliedStart: 2,
+					removed: '',
+					inserted: 'x\ny'
+				})
+			],
+			[],
+			{
+				'source.txt': 'a\nb\nx\ny\nc\nd\n'
+			}
+		);
+	const deletion =
+		new Diff({ context: 1 }).formatSession(
+			session,
+			[
+				authored({
+					lineStart: 2,
+					lineEnd: 2,
+					appliedStart: 2,
+					removed: 'x\ny',
+					inserted: ''
+				})
+			],
+			[],
+			{
+				'source.txt': 'a\nb\nc\nd\n'
+			}
+		);
+
+	assert.match(
+		insertion,
+		/@@ -1,2 \+1,4 @@\n1 1  b\n  2 \+x\n  3 \+y\n2 4  c/
+	);
+	assert.match(
+		deletion,
+		/@@ -1,4 \+1,2 @@\n1 1  b\n2   -x\n3   -y\n4 2  c/
+	);
+});
+
+test('context gutters remain correct at large source coordinates', () => {
+	const lines =
+		Array.from(
+			{ length: 10005 },
+			(_, index) => 'line-' + index
+		);
+	lines[10000] = 'new-10000';
+
+	const output =
+		new Diff({ context: 2 }).formatSession(
+			session,
+			[
+				authored({
+					lineStart: 10000,
+					lineEnd: 10000,
+					appliedStart: 10000,
+					removed: 'old-10000',
+					inserted: 'new-10000'
+				})
+			],
+			[],
+			{
+				'source.txt': lines.join('\n') + '\n'
+			}
+		);
+
+	assert.match(output, /@@ -9998,5 \+9998,5 @@/);
+	assert.match(output, /^ 9998  9998  line-9998$/m);
+	assert.match(output, /^10000       -old-10000$/m);
+	assert.match(output, /^      10000 \+new-10000$/m);
+	assert.match(output, /^10002 10002  line-10002$/m);
+});

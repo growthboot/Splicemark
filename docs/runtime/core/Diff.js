@@ -1,19 +1,35 @@
 export default class Diff {
+	#context;
 	#lineBase;
 
-	constructor({ lineBase = 0 } = {}) {
+	constructor({
+		lineBase = 0,
+		context = 0
+	} = {}) {
 		const parsedLineBase =
 			lineBase === '0'
 				? 0
 				: lineBase === '1'
 					? 1
 					: lineBase;
+		const parsedContext =
+			typeof context === 'string' && /^\d+$/.test(context)
+				? Number(context)
+				: context;
 
 		if (parsedLineBase !== 0 && parsedLineBase !== 1) {
 			throw new Error('lineBase must be 0 or 1');
 		}
 
+		if (
+			!Number.isSafeInteger(parsedContext) ||
+			parsedContext < 0
+		) {
+			throw new Error('context must be a non-negative integer');
+		}
+
 		this.#lineBase = parsedLineBase;
+		this.#context = parsedContext;
 	}
 	format(session, file, edit, peers = [], notes = []) {
 		const entries = [
@@ -75,37 +91,77 @@ export default class Diff {
 			: edit.appliedStart;
 	}
 
-	#formatEdit(kind, session, file, edit, gutterWidth) {
+	#formatEdit(
+		kind,
+		session,
+		file,
+		edit,
+		gutterWidth,
+		source
+	) {
 		const lineStart = this.#lineStart(edit);
 		const oldCount =
 			this.#lineCount(edit.removed);
 		const newCount =
 			this.#lineCount(edit.inserted);
+		const context =
+			this.#contextRows(
+				file,
+				lineStart,
+				newCount,
+				source
+			);
+		const beforeCount =
+			context.before.length;
+		const afterCount =
+			context.after.length;
+		const hunkStart =
+			lineStart - beforeCount;
+		const oldHunkCount =
+			beforeCount + oldCount + afterCount;
+		const newHunkCount =
+			beforeCount + newCount + afterCount;
 		const shift =
 			edit.shift === 0
 				? ''
 				: ' shifted ' + (edit.shift > 0 ? '+' : '') + edit.shift;
 		const header =
 			Number.isInteger(lineStart)
-				? '@@ -' + this.#coordinate(lineStart) + ',' + oldCount +
-					' +' + this.#coordinate(lineStart) + ',' + newCount + ' @@' + shift
+				? '@@ -' + this.#coordinate(hunkStart) + ',' + oldHunkCount +
+					' +' + this.#coordinate(hunkStart) + ',' + newHunkCount + ' @@' + shift
 				: '@@';
+		const before =
+			this.#contextContent(
+				context.before,
+				hunkStart,
+				hunkStart,
+				gutterWidth
+			);
 		const removed =
 			this.#content('-', edit.removed, lineStart, gutterWidth);
 		const inserted =
 			this.#content('+', edit.inserted, lineStart, gutterWidth);
+		const after =
+			this.#contextContent(
+				context.after,
+				lineStart + oldCount,
+				lineStart + newCount,
+				gutterWidth
+			);
 
 		return [
 			'[' + kind + ' · ' + session.id + ' · ' + session.description + ']',
 			'--- a/' + file,
 			'+++ b/' + file,
 			header,
+			before,
 			removed,
-			inserted
+			inserted,
+			after
 		].filter(Boolean).join('\n');
 	}
 
-	formatSession(session, edits, peers = []) {
+	formatSession(session, edits, peers = [], sources = {}) {
 		const active =
 			edits.filter(edit => (edit.status || 'active') === 'active');
 		const stale =
@@ -136,14 +192,15 @@ export default class Diff {
 			)
 		);
 		const gutterWidth =
-			this.#gutterWidth(entries);
+			this.#gutterWidth(entries, sources);
 		const sections = entries.map(entry =>
 			this.#formatEdit(
 				entry.kind,
 				entry.session,
 				entry.file,
 				entry.edit,
-				gutterWidth
+				gutterWidth,
+				sources[entry.file]
 			)
 		);
 
@@ -170,24 +227,66 @@ export default class Diff {
 			: text.split(/\r?\n/).length;
 	}
 
-	#gutterWidth(entries) {
+	#gutterWidth(entries, sources = {}) {
 		let largest = this.#lineBase;
 
 		for (const entry of entries) {
 			const lineStart = this.#lineStart(entry.edit);
-			const rowCount = Math.max(
-				this.#lineCount(entry.edit.removed),
-				this.#lineCount(entry.edit.inserted)
-			);
+			const oldCount =
+				this.#lineCount(entry.edit.removed);
+			const newCount =
+				this.#lineCount(entry.edit.inserted);
 
-			if (!Number.isInteger(lineStart) || rowCount === 0) {
+			if (!Number.isInteger(lineStart)) {
 				continue;
 			}
 
-			largest = Math.max(
-				largest,
-				this.#coordinate(lineStart + rowCount - 1)
-			);
+			if (this.#context === 0) {
+				const rowCount =
+					Math.max(oldCount, newCount);
+
+				if (rowCount === 0) {
+					continue;
+				}
+
+				largest = Math.max(
+					largest,
+					this.#coordinate(lineStart + rowCount - 1)
+				);
+				continue;
+			}
+
+			const context =
+				this.#contextRows(
+					entry.file,
+					lineStart,
+					newCount,
+					sources[entry.file]
+				);
+			const start =
+				lineStart - context.before.length;
+			const oldRows =
+				context.before.length +
+				oldCount +
+				context.after.length;
+			const newRows =
+				context.before.length +
+				newCount +
+				context.after.length;
+
+			if (oldRows > 0) {
+				largest = Math.max(
+					largest,
+					this.#coordinate(start + oldRows - 1)
+				);
+			}
+
+			if (newRows > 0) {
+				largest = Math.max(
+					largest,
+					this.#coordinate(start + newRows - 1)
+				);
+			}
 		}
 
 		return String(largest).length;
@@ -215,6 +314,80 @@ export default class Diff {
 					gutterWidth
 				);
 			})
+			.join('\n');
+	}
+
+	#contextRows(file, lineStart, newCount, source) {
+		if (this.#context === 0) {
+			return {
+				before: [],
+				after: []
+			};
+		}
+
+		if (typeof source !== 'string') {
+			throw new Error(
+				'context requires current source for ' + file
+			);
+		}
+
+		if (!Number.isInteger(lineStart) || lineStart < 0) {
+			throw new Error(
+				'context requires a current line location for ' + file
+			);
+		}
+
+		const lines =
+			this.#sourceLines(source);
+		const beforeStart =
+			Math.max(0, lineStart - this.#context);
+		const afterStart =
+			lineStart + newCount;
+
+		return {
+			before:
+				lines.slice(
+					beforeStart,
+					lineStart
+				),
+			after:
+				lines.slice(
+					afterStart,
+					afterStart + this.#context
+				)
+		};
+	}
+
+	#sourceLines(source) {
+		if (source === '') {
+			return [];
+		}
+
+		const lines =
+			source.split(/\r?\n/);
+
+		if (/\r?\n$/.test(source)) {
+			lines.pop();
+		}
+
+		return lines;
+	}
+
+	#contextContent(
+		lines,
+		oldStart,
+		newStart,
+		gutterWidth
+	) {
+		return lines
+			.map((line, index) =>
+				this.#gutter(
+					this.#coordinate(oldStart + index),
+					this.#coordinate(newStart + index),
+					' ' + line,
+					gutterWidth
+				)
+			)
 			.join('\n');
 	}
 

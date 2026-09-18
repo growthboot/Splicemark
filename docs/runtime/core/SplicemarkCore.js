@@ -267,7 +267,7 @@ export default class SplicemarkCore {
 			.clean(this.#git.getHead());
 	}
 
-	diff(sessionId) {
+	diff(sessionId, { includeSources = false } = {}) {
 		const store = this.#getStore();
 
 		for (const active of store.listSessions()) {
@@ -302,10 +302,23 @@ export default class SplicemarkCore {
 			);
 		}
 
+		const sources = {};
+
+		if (includeSources) {
+			for (const file of activeFiles) {
+				const target =
+					this.#resolve(file, 'diff');
+
+				sources[file] =
+					this.#workspace.read(target.file);
+			}
+		}
+
 		return {
 			session,
 			edits,
-			peers
+			peers,
+			...(includeSources ? { sources } : {})
 		};
 	}
 

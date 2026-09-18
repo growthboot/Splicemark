@@ -239,3 +239,197 @@ test('CLI note, finish, clean, and help complete the agent lifecycle', t => {
 	assert.match(help, /splicemark finish/);
 	assert.match(help, /splicemark clean/);
 });
+
+
+test('CLI diff emits literal real context and all supported aliases are equivalent', t => {
+	const root = repository(t);
+	const content =
+		Array.from(
+			{ length: 7 },
+			(_, index) => 'line-' + index
+		).join('\n') + '\n';
+
+	fs.writeFileSync(
+		path.join(root, 'source.txt'),
+		content
+	);
+	git(root, ['add', 'source.txt']);
+	git(root, ['commit', '-qm', 'context fixture']);
+
+	const session =
+		run(root, ['start', 'Change middle line']).trim();
+
+	run(root, [
+		'edit',
+		session,
+		'source.txt',
+		'--lines',
+		'3:3',
+		'--expect-start',
+		'line-3',
+		'--expect-end',
+		'line-3'
+	], 'changed-3\n');
+
+	const withoutContext =
+		run(root, ['diff', session]);
+
+	assert.equal(
+		run(root, ['diff', session, '--context=0']),
+		withoutContext
+	);
+
+	const context =
+		run(root, ['diff', session, '--context=2']);
+	const expected =
+		'[YOU · ' + session + ' · Change middle line]\n' +
+		'--- a/source.txt\n' +
+		'+++ b/source.txt\n' +
+		'@@ -1,5 +1,5 @@\n' +
+		'1 1  line-1\n' +
+		'2 2  line-2\n' +
+		'3   -line-3\n' +
+		'  3 +changed-3\n' +
+		'4 4  line-4\n' +
+		'5 5  line-5\n';
+
+	assert.equal(context, expected);
+
+	for (const alias of [
+		['--context', '2'],
+		['--unified=2'],
+		['--unified', '2'],
+		['-U2'],
+		['-U', '2']
+	]) {
+		assert.equal(
+			run(root, ['diff', session, ...alias]),
+			context
+		);
+	}
+
+	assert.equal(
+		run(root, [
+			'diff',
+			session,
+			'--context=2',
+			'--line-base=1'
+		]),
+		'[YOU · ' + session + ' · Change middle line]\n' +
+		'--- a/source.txt\n' +
+		'+++ b/source.txt\n' +
+		'@@ -2,5 +2,5 @@\n' +
+		'2 2  line-1\n' +
+		'3 3  line-2\n' +
+		'4   -line-3\n' +
+		'  4 +changed-3\n' +
+		'5 5  line-4\n' +
+		'6 6  line-5\n'
+	);
+});
+
+test('CLI diff rejects invalid context values', t => {
+	const root = repository(t);
+	const session =
+		run(root, ['start', 'Invalid context']).trim();
+
+	for (const flags of [
+		['--context=-1'],
+		['--context=foo'],
+		['--context=1.5'],
+		['--unified=-1'],
+		['-U', 'foo']
+	]) {
+		const result =
+			spawnSync(
+				process.execPath,
+				[cli, 'diff', session, ...flags],
+				{
+					cwd: root,
+					encoding: 'utf8'
+				}
+			);
+
+		assert.equal(result.status, 1);
+		assert.equal(result.stdout, '');
+		assert.equal(
+			result.stderr,
+			'splicemark: context must be a non-negative integer\n'
+		);
+	}
+});
+
+test('CLI context follows a peer location shifted by an earlier line-count change', t => {
+	const root = repository(t);
+
+	fs.writeFileSync(
+		path.join(root, 'source.txt'),
+		'zero\none\nthird\nlast\n'
+	);
+	git(root, ['add', 'source.txt']);
+	git(root, ['commit', '-qm', 'peer context fixture']);
+
+	const peer =
+		run(root, ['start', 'Change third line']).trim();
+	const requested =
+		run(root, ['start', 'Expand header']).trim();
+
+	run(root, [
+		'edit',
+		peer,
+		'source.txt',
+		'--lines',
+		'2:2',
+		'--expect-start',
+		'third',
+		'--expect-end',
+		'third'
+	], 'peer-third\n');
+
+	run(root, [
+		'edit',
+		requested,
+		'source.txt',
+		'--lines',
+		'0:0',
+		'--expect-start',
+		'zero',
+		'--expect-end',
+		'zero'
+	], 'zero\ninserted\n');
+
+	const diff =
+		run(root, [
+			'diff',
+			requested,
+			'--context=1'
+		]);
+
+	assert.match(
+		diff,
+		/\[PEER · sm-[0-9a-f]{8} · Change third line\]\n--- a\/source\.txt\n\+\+\+ b\/source\.txt\n@@ -2,3 \+2,3 @@\n2 2  one\n3   -third\n  3 \+peer-third\n4 4  last/
+	);
+	assert.ok(
+		diff.indexOf('[YOU · ' + requested + ' · Expand header]') <
+		diff.indexOf('[PEER · ' + peer + ' · Change third line]')
+	);
+});
+
+test('CLI help documents context defaults, aliases, and line-base interaction', t => {
+	const root = repository(t);
+	const help =
+		run(root, ['help']);
+
+	assert.match(
+		help,
+		/splicemark diff SESSION \[--line-base=0\|1\] \[--context=N\]/
+	);
+	assert.match(
+		help,
+		/--context=N +Unchanged source lines before and after each edit \(default: 0\)/
+	);
+	assert.match(
+		help,
+		/--context N, --unified=N, --unified N, -UN, -U N/
+	);
+});

@@ -44,6 +44,70 @@ function diffLineBase(args) {
 	return 0;
 }
 
+function diffContext(args) {
+	const values = [];
+
+	for (let index = 0; index < args.length; index++) {
+		const arg = args[index];
+
+		if (arg.startsWith('--context=')) {
+			values.push(
+				arg.slice('--context='.length)
+			);
+			continue;
+		}
+
+		if (arg.startsWith('--unified=')) {
+			values.push(
+				arg.slice('--unified='.length)
+			);
+			continue;
+		}
+
+		if (arg.startsWith('-U') && arg !== '-U') {
+			values.push(arg.slice(2));
+			continue;
+		}
+
+		if (
+			arg === '--context' ||
+			arg === '--unified' ||
+			arg === '-U'
+		) {
+			if (index + 1 >= args.length) {
+				throw new Error('missing ' + arg);
+			}
+
+			values.push(args[index + 1]);
+			index++;
+		}
+	}
+
+	if (values.length > 1) {
+		throw new Error('context may be specified once');
+	}
+
+	const value =
+		values.length === 0 ? '0' : values[0];
+
+	if (!/^\d+$/.test(value)) {
+		throw new Error(
+			'context must be a non-negative integer'
+		);
+	}
+
+	const parsed =
+		Number(value);
+
+	if (!Number.isSafeInteger(parsed)) {
+		throw new Error(
+			'context must be a non-negative integer'
+		);
+	}
+
+	return parsed;
+}
+
 function range(value) {
 	const match = /^(\d+):(\d+)$/.exec(value);
 
@@ -214,17 +278,27 @@ async function main() {
 			throw new Error('diff requires SESSION');
 		}
 
+		const context =
+			diffContext(flags);
 		const diff =
 			new Diff({
-				lineBase: diffLineBase(flags)
+				lineBase: diffLineBase(flags),
+				context
 			});
-		const result = splicemark.diff(sessionId);
+		const result =
+			splicemark.diff(
+				sessionId,
+				{
+					includeSources: context > 0
+				}
+			);
 
 		process.stdout.write(
 			diff.formatSession(
 				result.session,
 				result.edits,
-				result.peers
+				result.peers,
+				result.sources
 			)
 		);
 		return;
@@ -240,11 +314,13 @@ async function main() {
 			'  splicemark batch SESSION FILE --chars < splices.json\n' +
 			'  splicemark note SESSION FILE --lines START:END --message TEXT\n' +
 			'  splicemark note SESSION FILE --chars START:END --message TEXT\n' +
-			'  splicemark diff SESSION [--line-base=0|1]\n' +
+			'  splicemark diff SESSION [--line-base=0|1] [--context=N]\n' +
 			'  splicemark finish SESSION\n' +
 			'  splicemark clean\n\n' +
 			'Diff options:\n' +
-			'  --line-base=0|1  Source coordinates: 0 (default, agent/programmatic), 1 (human/editor)\n'
+			'  --line-base=0|1  Source coordinates: 0 (default, agent/programmatic), 1 (human/editor)\n' +
+			'  --context=N       Unchanged source lines before and after each edit (default: 0)\n' +
+			'                    Also: --context N, --unified=N, --unified N, -UN, -U N\n'
 		);
 		return;
 	}
