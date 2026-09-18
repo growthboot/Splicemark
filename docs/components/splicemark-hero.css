@@ -86,18 +86,88 @@ h1 span {
 	padding: 72px 0 72px 48px;
 }
 
-.trace-heading {
-	display: flex;
-	justify-content: space-between;
-	gap: 18px;
-	padding-bottom: 13px;
+.demo-intro {
+	padding-bottom: 24px;
 	border-bottom: 1px solid var(--line);
-	color: #5f646d;
+}
+
+
+.demo-intro h2 {
+	max-width: 520px;
+	margin: 0;
+	color: #e2e4e9;
+	font-size: clamp(27px, 2.35vw, 38px);
+	font-weight: 720;
+	line-height: 1.05;
+	letter-spacing: -0.045em;
+}
+
+.demo-description {
+	max-width: 560px;
+	margin: 14px 0 0;
+	color: #858b95;
+	font-size: 15px;
+	line-height: 1.65;
+}
+
+.demo-agents {
+	display: grid;
+	gap: 8px;
+	margin-top: 20px;
+}
+
+.demo-agent {
+	display: grid;
+	grid-template-columns: 8px 44px minmax(0, 1fr) auto;
+	gap: 9px;
+	align-items: center;
+	min-height: 27px;
 	font-family: var(--mono);
+	font-size: 12px;
+}
+
+.agent-dot {
+	width: 5px;
+	height: 5px;
+	border-radius: 50%;
+}
+
+.demo-agent.you .agent-dot {
+	background: var(--accent);
+	box-shadow: 0 0 12px rgba(167, 139, 250, 0.55);
+}
+
+.demo-agent.peer .agent-dot {
+	background: var(--green);
+	box-shadow: 0 0 12px rgba(101, 216, 120, 0.45);
+}
+
+.agent-kind {
 	font-size: 11px;
-	font-weight: 700;
-	letter-spacing: 0.08em;
+	font-weight: 800;
+	letter-spacing: 0.06em;
 	text-transform: uppercase;
+}
+
+.demo-agent.you .agent-kind {
+	color: var(--accent);
+}
+
+.demo-agent.peer .agent-kind {
+	color: var(--green);
+}
+
+.agent-task {
+	overflow: hidden;
+	color: #7d838e;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.demo-agent code {
+	color: #555c67;
+	font-family: inherit;
+	font-size: inherit;
 }
 
 .terminal {
@@ -108,61 +178,40 @@ h1 span {
 	box-shadow: 0 20px 70px rgba(0, 0, 0, 0.22);
 }
 
-.terminal-bar {
-	display: grid;
-	grid-template-columns: auto 1fr auto;
-	align-items: center;
-	min-height: 38px;
-	padding: 0 13px;
-	border-bottom: 1px solid var(--line);
-	background: rgba(255, 255, 255, 0.025);
+.terminal-command {
+	padding: 14px 14px 15px;
+	border-bottom: 1px solid var(--line-soft);
+	background: #080a0f;
 	font-family: var(--mono);
 }
 
-.terminal-dots {
+.terminal-context {
 	display: flex;
-	gap: 5px;
-}
-
-.terminal-dots span {
-	width: 6px;
-	height: 6px;
-	border-radius: 50%;
-	background: #3c414b;
-}
-
-.terminal-title {
-	justify-self: center;
-	color: #555b65;
-	font-size: 9px;
-	font-weight: 700;
-	letter-spacing: 0.08em;
-	text-transform: uppercase;
-}
-
-.terminal-state {
-	color: #747a84;
-	font-size: 9px;
+	gap: 8px;
+	margin-bottom: 8px;
+	font-size: 11px;
 	font-weight: 700;
 	letter-spacing: 0.04em;
-	text-transform: uppercase;
 }
 
-.terminal-command {
+.terminal-user {
+	color: #6f7681;
+}
+
+.terminal-path {
+	color: #555d68;
+}
+
+.terminal-input {
 	display: flex;
 	align-items: center;
 	gap: 9px;
-	min-height: 46px;
 	overflow-x: auto;
-	padding: 0 14px;
-	border-bottom: 1px solid var(--line-soft);
-	background: rgba(255, 255, 255, 0.012);
-	font-family: var(--mono);
-	font-size: 12px;
+	font-size: 14px;
 	white-space: nowrap;
 }
 
-.terminal-command code {
+.terminal-input code {
 	color: #e0e2e7;
 	font-family: inherit;
 	font-size: inherit;
@@ -172,6 +221,15 @@ h1 span {
 	color: var(--green);
 	font-weight: 800;
 }
+
+.terminal-cursor {
+	width: 6px;
+	height: 15px;
+	flex: 0 0 auto;
+	background: #a8adb5;
+	opacity: 0.7;
+}
+
 
 .terminal-output {
 	overflow-x: auto;
@@ -192,10 +250,10 @@ h1 span {
 .output-line {
 	display: block;
 	box-sizing: border-box;
-	min-height: 19px;
+	min-height: 22px;
 	color: #a6abb4;
 	font-family: var(--mono);
-	font-size: 11px;
+	font-size: 13px;
 	line-height: 1.65;
 	white-space: pre;
 }
@@ -285,25 +343,22 @@ h1 span {
 		margin-top: 28px;
 	}
 
-	.trace-heading {
-		display: grid;
+
+	.demo-intro h2 {
+		font-size: 28px;
+	}
+
+	.demo-agents {
 		gap: 6px;
+	}
+
+	.demo-agent {
+		grid-template-columns: 8px 40px minmax(0, 1fr) auto;
+		gap: 7px;
 	}
 
 	.terminal {
 		margin-top: 20px;
-	}
-
-	.terminal-title {
-		display: none;
-	}
-
-	.terminal-bar {
-		grid-template-columns: auto 1fr;
-	}
-
-	.terminal-state {
-		justify-self: end;
 	}
 
 	.output-block {

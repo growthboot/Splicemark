@@ -56,25 +56,43 @@ class SplicemarkHero extends HTMLElement {
 					class="trace"
 					aria-label="Terminal showing your changes and a peer's changes in one shared file"
 				>
-					<div class="trace-heading">
-						<span>terminal / attributed diff</span>
-						<span>same-file collision</span>
+					<div class="demo-intro">
+
+						<h2>Two agents. One shared file.</h2>
+
+						<p class="demo-description">
+							Your task is changing one region while a peer works hundreds
+							of lines away. Splicemark still treats the file as shared and
+							keeps each change block attributed.
+						</p>
+
+						<div class="demo-agents" aria-label="Active authors in RequestPipeline.js">
+							<div class="demo-agent you">
+								<span class="agent-dot" aria-hidden="true"></span>
+								<span class="agent-kind">you</span>
+								<span class="agent-task">Cache resolved handlers</span>
+								<code>~450</code>
+							</div>
+							<div class="demo-agent peer">
+								<span class="agent-dot" aria-hidden="true"></span>
+								<span class="agent-kind">peer</span>
+								<span class="agent-task">Validate request headers</span>
+								<code>~100</code>
+							</div>
+						</div>
 					</div>
 
 					<div class="terminal">
-						<div class="terminal-bar">
-							<div class="terminal-dots" aria-hidden="true">
-								<span></span>
-								<span></span>
-								<span></span>
-							</div>
-							<span class="terminal-title">shared working tree</span>
-							<span class="terminal-state">2 agents · 1 file</span>
-						</div>
-
 						<div class="terminal-command">
-							<span class="prompt" aria-hidden="true">$</span>
-							<code>splicemark diff sm-7a14d9c2</code>
+							<div class="terminal-context">
+								<span class="terminal-user">agent@local</span>
+								<span class="terminal-path">~/src/splicemark</span>
+							</div>
+							<div class="terminal-input">
+								<span class="prompt" aria-hidden="true">❯</span>
+								<code>splicemark diff sm-7a14d9c2</code>
+								<span class="terminal-cursor" aria-hidden="true"></span>
+							</div>
 						</div>
 
 						<div class="terminal-output">
