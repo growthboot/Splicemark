@@ -338,6 +338,14 @@ class SplicemarkHero extends HTMLElement {
 					newEnd + contextAfter
 				)
 				.map(line => ' ' + line);
+		const file =
+			lines.find(
+				line => line.startsWith('+++ b/')
+			)?.slice(6) ||
+			lines.find(
+				line => line.startsWith('--- a/')
+			)?.slice(6) ||
+			'';
 		const expandedHeader =
 			'@@ -' +
 			(oldStart - contextBefore) +
@@ -348,10 +356,11 @@ class SplicemarkHero extends HTMLElement {
 			',' +
 			(newCount + contextBefore + contextAfter) +
 			' @@' +
-			hunk[5];
+			hunk[5] +
+			(file ? ' ' + file : '');
 
 		return [
-			...lines.slice(0, hunkIndex),
+			lines[0],
 			expandedHeader,
 			...before,
 			...lines.slice(hunkIndex + 1),
