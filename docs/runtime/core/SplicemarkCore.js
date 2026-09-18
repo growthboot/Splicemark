@@ -75,8 +75,6 @@ export default class SplicemarkCore {
 		const peers = registry.find(
 			sessionId,
 			target.relative,
-			edit.targetLineStart,
-			edit.targetLineEnd,
 			head
 		);
 		const notes = registry.findNotes(
@@ -140,8 +138,6 @@ export default class SplicemarkCore {
 			const peers = registry.find(
 				sessionId,
 				target.relative,
-				edit.targetLineStart,
-				edit.targetLineEnd,
 				head
 			);
 			const notes = registry.findNotes(
@@ -273,12 +269,43 @@ export default class SplicemarkCore {
 
 	diff(sessionId) {
 		const store = this.#getStore();
+
+		for (const active of store.listSessions()) {
+			if (active.status === 'active') {
+				this.#reconcile(active.id, store);
+			}
+		}
+
 		const session =
 			this.#reconcile(sessionId, store);
+		const edits =
+			store.listEdits(sessionId);
+		const activeFiles =
+			new Set(
+				edits
+					.filter(edit => (edit.status || 'active') === 'active')
+					.map(edit => edit.path)
+			);
+		const registry =
+			new PeerRegistry(store);
+		const head =
+			this.#git.getHead();
+		const peers = [];
+
+		for (const file of activeFiles) {
+			peers.push(
+				...registry.find(
+					sessionId,
+					file,
+					head
+				)
+			);
+		}
 
 		return {
 			session,
-			edits: store.listEdits(sessionId)
+			edits,
+			peers
 		};
 	}
 

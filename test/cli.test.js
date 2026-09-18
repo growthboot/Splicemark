@@ -126,7 +126,10 @@ test('CLI diff surfaces distant peer hunks from the same active file', t => {
 	assert.match(diff, /\[PEER · sm-[0-9a-f]{8} · Change early region\]/);
 	assert.match(diff, /@@ -100,1 \+100,1 @@/);
 	assert.match(diff, /\+peer-100/);
-	assert.ok(diff.indexOf('[YOU ·') < diff.indexOf('[PEER ·'));
+	assert.ok(
+		diff.indexOf('@@ -100,1 +100,1 @@') <
+		diff.indexOf('@@ -450,1 +450,1 @@')
+	);
 });
 
 

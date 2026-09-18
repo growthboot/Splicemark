@@ -1,9 +1,12 @@
+import LiveDemo from '../runtime/LiveDemo.js';
+
 const stylesheet = new URL(
 	'./splicemark-hero.css',
 	import.meta.url
 ).href;
-
 class SplicemarkHero extends HTMLElement {
+	#result = null;
+	#error = '';
 	#root;
 
 	constructor() {
@@ -15,6 +18,27 @@ class SplicemarkHero extends HTMLElement {
 	}
 
 	connectedCallback() {
+		this.#render();
+		void this.#run();
+	}
+
+	async #run() {
+		try {
+			this.#result = await new LiveDemo().run('peers');
+			this.#error = '';
+		} catch (error) {
+			this.#error =
+				error instanceof Error
+					? error.message
+					: String(error);
+		}
+
+		this.#render();
+	}
+
+	#render() {
+		const capture = this.#capture();
+
 		this.#root.innerHTML = `
 			<link rel="stylesheet" href="${stylesheet}">
 
@@ -61,24 +85,16 @@ class SplicemarkHero extends HTMLElement {
 						<h2>Two agents. One shared file.</h2>
 
 						<p class="demo-description">
-							Your task is changing one region while a peer works hundreds
-							of lines away. Splicemark still treats the file as shared and
-							keeps each change block attributed.
+							When two agents work in the same file, Splicemark makes that shared
+							work visible with labeled change blocks. Each agent can see who is
+							changing what and where.
 						</p>
 
-						<div class="demo-agents" aria-label="Active authors in RequestPipeline.js">
-							<div class="demo-agent you">
-								<span class="agent-dot" aria-hidden="true"></span>
-								<span class="agent-kind">you</span>
-								<span class="agent-task">Cache resolved handlers</span>
-								<code>~450</code>
-							</div>
-							<div class="demo-agent peer">
-								<span class="agent-dot" aria-hidden="true"></span>
-								<span class="agent-kind">peer</span>
-								<span class="agent-task">Validate request headers</span>
-								<code>~100</code>
-							</div>
+						<div
+							class="demo-agents"
+							aria-label="Active authors in ${this.#escape(capture?.file || 'shared file')}"
+						>
+							${this.#agents(capture)}
 						</div>
 					</div>
 
@@ -90,34 +106,124 @@ class SplicemarkHero extends HTMLElement {
 							</div>
 							<div class="terminal-input">
 								<span class="prompt" aria-hidden="true">❯</span>
-								<code>splicemark diff sm-7a14d9c2</code>
+								<code>${this.#escape(capture?.command || 'Executing live Splicemark scenario…')}</code>
 								<span class="terminal-cursor" aria-hidden="true"></span>
 							</div>
 						</div>
 
 						<div class="terminal-output">
-							<div class="output-block you">
-								<code class="output-line attribution">[YOU · sm-7a14d9c2 · Cache resolved handlers]</code>
-								<code class="output-line file">--- a/src/RequestPipeline.js</code>
-								<code class="output-line file">+++ b/src/RequestPipeline.js</code>
-								<code class="output-line hunk">@@ -450,1 +450,1 @@</code>
-								<code class="output-line removed">-    return resolveHandler(route);</code>
-								<code class="output-line added">+    return this.#handlerCache.get(route) ?? resolveHandler(route);</code>
-							</div>
-
-							<div class="output-block peer">
-								<code class="output-line attribution">[PEER · sm-0fd321bb · Validate request headers]</code>
-								<code class="output-line file">--- a/src/RequestPipeline.js</code>
-								<code class="output-line file">+++ b/src/RequestPipeline.js</code>
-								<code class="output-line hunk">@@ -100,1 +100,1 @@</code>
-								<code class="output-line removed">-    const headers = request.headers;</code>
-								<code class="output-line added">+    const headers = validateHeaders(request.headers);</code>
-							</div>
+							${this.#output(capture)}
 						</div>
 					</div>
 				</div>
 			</section>
 		`;
+	}
+
+	#capture() {
+		if (!this.#result || typeof this.#result.output !== 'string') {
+			return null;
+		}
+
+		return {
+			command: this.#result.command,
+			file: this.#result.file,
+			blocks: this.#result.output
+				.trim()
+				.split(/\n\s*\n/)
+				.map(section => this.#block(section))
+				.filter(Boolean)
+		};
+	}
+
+	#block(section) {
+		const lines = section.split('\n');
+		const attribution = lines[0]?.match(
+			/^\[(YOU|PEER) · ([^·]+) · (.+)\]$/
+		);
+
+		if (!attribution) {
+			return null;
+		}
+
+		const hunk = lines.find(line => line.startsWith('@@'));
+		const location = hunk?.match(/^@@ -(\d+)/);
+
+		return {
+			kind: attribution[1],
+			task: attribution[3],
+			line: location ? Number(location[1]) : null,
+			lines
+		};
+	}
+
+	#agents(capture) {
+		if (!capture) {
+			return '';
+		}
+
+		return capture.blocks.map(block => `
+			<div class="demo-agent ${block.kind.toLowerCase()}">
+				<span class="agent-dot" aria-hidden="true"></span>
+				<span class="agent-kind">${this.#escape(block.kind)}</span>
+				<span class="agent-task">${this.#escape(block.task)}</span>
+				<code>${block.line === null ? '' : `line ${block.line}`}</code>
+			</div>
+		`).join('');
+	}
+
+	#output(capture) {
+		if (!capture) {
+			return `
+				<div class="output-block">
+					<code class="output-line">${this.#escape(
+						this.#error || 'Executing current Splicemark modules…'
+					)}</code>
+				</div>
+			`;
+		}
+
+		return capture.blocks.map(block => `
+			<div class="output-block ${block.kind.toLowerCase()}">
+				${block.lines.map((line, index) =>
+					`<code class="output-line ${this.#lineClass(line, index)}">${this.#escape(line)}</code>`
+				).join('')}
+			</div>
+		`).join('');
+	}
+
+	#lineClass(line, index) {
+		if (index === 0) {
+			return 'attribution';
+		}
+
+		if (line.startsWith('--- ') || line.startsWith('+++ ')) {
+			return 'file';
+		}
+
+		if (line.startsWith('@@')) {
+			return 'hunk';
+		}
+
+		if (line.startsWith('-')) {
+			return 'removed';
+		}
+
+		if (line.startsWith('+')) {
+			return 'added';
+		}
+
+		return '';
+	}
+
+	#escape(value) {
+		return String(value).replace(/[&<>"']/g, character => ({
+			'&': '&amp;',
+			'<': '&lt;',
+			'>': '&gt;',
+			'"': '&quot;',
+			"'": '&#039;'
+		})[character]);
 	}
 }
 

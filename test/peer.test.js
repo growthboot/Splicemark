@@ -139,6 +139,10 @@ test('surfaces distant edits in the same active file as peer collisions', t => {
 	assert.match(output, /\[PEER · .* · Change early region\]/);
 	assert.match(output, /@@ -101,1 \+101,1 @@/);
 	assert.match(output, /\+peer-100/);
+	assert.ok(
+		output.indexOf('@@ -101,1 +101,1 @@') <
+		output.indexOf('@@ -451,1 +451,1 @@')
+	);
 });
 
 test('does not surface edits from a different file as peer collisions', t => {

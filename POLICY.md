@@ -123,6 +123,14 @@ Unexpected worktree-rewriting Git operations must never be mistaken for Splicema
 
 Cleanup must never modify project source or Git history.
 
+## Website as Executable Documentation
+
+The website is part of Splicemark’s behavioral test surface. Examples that demonstrate Splicemark behavior must execute the current production core rather than replaying prerecorded output or substituting hand-authored behavioral fixtures.
+
+Browser examples may provide JavaScript implementations of external boundaries such as Git, workspace I/O, and session storage. Those implementations should cover only the semantics Splicemark actually depends on, while the Splicemark core, peer detection, reconciliation, and diff formatting remain the production implementations.
+
+Visible demo output must be derived at runtime from those real APIs. If a live example cannot execute the current implementation, it should fail visibly rather than fall back to canned data that can drift from the engine.
+
 ## Design Constraints
 
 Keep the agent-facing workflow small enough to explain in a short system prompt.

@@ -375,22 +375,28 @@ export default class LiveDemo {
 			);
 		const after =
 			workspace.read(path);
+		const state =
+			splicemark.diff(
+				second.id
+			);
+		const output =
+			new Diff().formatSession(
+				state.session,
+				state.edits,
+				state.peers
+			);
 
 		return {
 			id: 'peers',
 			title:
 				'Locally relevant peer edits',
 			file: result.file,
+			command:
+				'splicemark diff ' +
+				second.id,
 			before,
 			after,
-			output:
-				new Diff().format(
-					result.session,
-					result.file,
-					result.edit,
-					result.peers,
-					result.notes
-				),
+			output,
 			focus: [
 				result.edit.lineStart
 			],
@@ -402,7 +408,7 @@ export default class LiveDemo {
 				[
 					'peer edits surfaced',
 					String(
-						result.peers.length
+						state.peers.length
 					)
 				],
 				[
