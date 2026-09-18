@@ -201,8 +201,7 @@ class SplicemarkLiveExample extends HTMLElement {
 					<div class="source-line ${
 						focus ? 'focus' : ''
 					}">
-						<span>${index}</span>
-
+						<span class="line-number" aria-hidden="true">${index + 1}</span>
 						<code>${
 							this.#escape(
 								lines[index] || ''
@@ -263,15 +262,51 @@ class SplicemarkLiveExample extends HTMLElement {
 	}
 
 	#output() {
+		let oldLine = null;
+		let newLine = null;
+
 		return this.#result.output
 			.split('\n')
 			.map(line => {
 				let kind = '';
+				let oldNumber = '';
+				let newNumber = '';
+				const hunk =
+					line.match(
+						/^@@ -(\d+)(?:,\d+)? \+(\d+)(?:,\d+)? @@/
+					);
 
-				if (line.startsWith('+')) {
+				if (hunk) {
+					kind = 'hunk';
+					oldLine = Number(hunk[1]);
+					newLine = Number(hunk[2]);
+				} else if (
+					line.startsWith('--- ') ||
+					line.startsWith('+++ ')
+				) {
+					kind = 'file';
+				} else if (line.startsWith('+')) {
 					kind = 'plus';
+					newNumber = newLine ?? '';
+					if (newLine !== null) {
+						newLine++;
+					}
 				} else if (line.startsWith('-')) {
 					kind = 'minus';
+					oldNumber = oldLine ?? '';
+					if (oldLine !== null) {
+						oldLine++;
+					}
+				} else if (line.startsWith(' ')) {
+					kind = 'context';
+					oldNumber = oldLine ?? '';
+					newNumber = newLine ?? '';
+					if (oldLine !== null) {
+						oldLine++;
+					}
+					if (newLine !== null) {
+						newLine++;
+					}
 				} else if (
 					line.startsWith('[YOU')
 				) {
@@ -291,11 +326,13 @@ class SplicemarkLiveExample extends HTMLElement {
 				}
 
 				return `
-					<div class="${kind}">
-						${
+					<div class="output-line ${kind}">
+						<span class="line-number old" aria-hidden="true">${oldNumber}</span>
+						<span class="line-number new" aria-hidden="true">${newNumber}</span>
+						<code>${
 							this.#escape(line) ||
 							'&nbsp;'
-						}
+						}</code>
 					</div>
 				`;
 			})

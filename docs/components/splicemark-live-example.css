@@ -140,12 +140,15 @@ button:disabled {
 
 .source-line {
 	display: grid;
-	grid-template-columns: 38px minmax(0, 1fr);
+	grid-template-columns: 44px minmax(0, 1fr);
 	padding: 1px 12px 1px 0;
 }
 
-.source-line > span {
-	padding-right: 10px;
+.source-line .line-number {
+	box-sizing: border-box;
+	margin-right: 10px;
+	padding-right: 8px;
+	border-right: 1px solid #1d2026;
 	color: #40444c;
 	text-align: right;
 	user-select: none;
@@ -161,8 +164,9 @@ button:disabled {
 	background: #121713;
 }
 
-.source-line.focus > span {
+.source-line.focus .line-number {
 	color: #62816d;
+	border-right-color: #26352a;
 }
 
 .source-line.focus code {
@@ -177,38 +181,66 @@ button:disabled {
 }
 
 .output {
-	padding-inline: 12px;
+	padding: 10px 0;
 	color: #858a94;
+}
+
+.output-line {
+	display: grid;
+	grid-template-columns: 36px 36px minmax(0, 1fr);
+	min-height: 1.55em;
+	padding-right: 12px;
+}
+
+.output-line .line-number {
+	box-sizing: border-box;
+	padding-right: 8px;
+	color: #3f434b;
+	text-align: right;
+	user-select: none;
+}
+
+.output-line .line-number.new {
+	margin-right: 10px;
+	border-right: 1px solid #1d2026;
+}
+
+.output-line code {
+	color: inherit;
 	overflow-wrap: anywhere;
 	white-space: pre-wrap;
 }
 
-.output div {
-	min-height: 1.55em;
-}
-
-.output .plus {
+.output-line.plus code {
 	color: #75be91;
 }
 
-.output .minus {
+.output-line.minus code {
 	color: #d1828e;
 }
 
-.output .you {
+.output-line.you code {
 	color: #aaa0df;
 }
 
-.output .peer {
+.output-line.peer code {
 	color: #d992aa;
 }
 
-.output .note {
+.output-line.note code {
 	color: #d2ad67;
 }
 
-.output .stale {
+.output-line.stale code {
 	color: #cfa56d;
+}
+
+.output-line.hunk code {
+	color: #7770b8;
+}
+
+.output-line.file code {
+	color: #666b74;
 }
 
 .runtime-note {

@@ -176,20 +176,74 @@ class SplicemarkHero extends HTMLElement {
 		if (!capture) {
 			return `
 				<div class="output-block">
-					<code class="output-line">${this.#escape(
-						this.#error || 'Executing current Splicemark modules…'
-					)}</code>
+					<div class="output-line">
+						<span class="line-number old" aria-hidden="true"></span>
+						<span class="line-number new" aria-hidden="true"></span>
+						<code>${this.#escape(
+							this.#error || 'Executing current Splicemark modules…'
+						)}</code>
+					</div>
 				</div>
 			`;
 		}
 
 		return capture.blocks.map(block => `
 			<div class="output-block ${block.kind.toLowerCase()}">
-				${block.lines.map((line, index) =>
-					`<code class="output-line ${this.#lineClass(line, index)}">${this.#escape(line)}</code>`
-				).join('')}
+				${this.#outputLines(block.lines)}
 			</div>
 		`).join('');
+	}
+
+	#outputLines(lines) {
+		let oldLine = null;
+		let newLine = null;
+
+		return lines.map((line, index) => {
+			const kind =
+				this.#lineClass(line, index);
+			const hunk =
+				line.match(
+					/^@@ -(\d+)(?:,\d+)? \+(\d+)(?:,\d+)? @@/
+				);
+			let oldNumber = '';
+			let newNumber = '';
+
+			if (hunk) {
+				oldLine = Number(hunk[1]);
+				newLine = Number(hunk[2]);
+			} else if (kind === 'removed') {
+				oldNumber = oldLine ?? '';
+
+				if (oldLine !== null) {
+					oldLine++;
+				}
+			} else if (kind === 'added') {
+				newNumber = newLine ?? '';
+
+				if (newLine !== null) {
+					newLine++;
+				}
+			} else if (line.startsWith(' ')) {
+				oldNumber = oldLine ?? '';
+				newNumber = newLine ?? '';
+
+				if (oldLine !== null) {
+					oldLine++;
+				}
+
+				if (newLine !== null) {
+					newLine++;
+				}
+			}
+
+			return `
+				<div class="output-line ${kind}">
+					<span class="line-number old" aria-hidden="true">${oldNumber}</span>
+					<span class="line-number new" aria-hidden="true">${newNumber}</span>
+					<code>${this.#escape(line) || '&nbsp;'}</code>
+				</div>
+			`;
+		}).join('');
 	}
 
 	#lineClass(line, index) {
