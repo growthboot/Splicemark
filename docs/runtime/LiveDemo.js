@@ -1,9 +1,13 @@
 export default class LiveDemo {
+	#exampleLoader;
 	#sourceLoader;
 
 	constructor({
+		exampleLoader = null,
 		sourceLoader = null
 	} = {}) {
+		this.#exampleLoader =
+			exampleLoader;
 		this.#sourceLoader =
 			sourceLoader;
 	}
@@ -285,20 +289,20 @@ export default class LiveDemo {
 		Diff
 	}) {
 		const file =
-			'PeerRegistry.js';
+			'WorldPhysics.js';
 		const path =
-			'src/' + file;
+			'docs/examples/' + file;
 		const original =
-			await this.#source(file);
-		const target =
+			await this.#example(file);
+		const earlyTarget =
 			this.#lineOf(
 				original,
-				'return peers;'
+				'return this.scale(1 / length);'
 			);
-		const originalLine =
+		const earlyLine =
 			this.#lineAt(
 				original,
-				target
+				earlyTarget
 			);
 		const workspace =
 			new MemoryWorkspace({
@@ -318,11 +322,11 @@ export default class LiveDemo {
 			});
 		const first =
 			splicemark.start(
-				'Document peer return'
+				'Cache inverse vector length'
 			);
 		const second =
 			splicemark.start(
-				'Refine peer return'
+				'Name collision skin tolerance'
 			);
 
 		splicemark.edit(
@@ -330,29 +334,33 @@ export default class LiveDemo {
 			path,
 			{
 				mode: 'lines',
-				start: target,
-				end: target,
+				start: earlyTarget,
+				end: earlyTarget,
 				expectedStart:
-					originalLine,
+					earlyLine,
 				expectedEnd:
-					originalLine,
+					earlyLine,
 				replacement:
-					this.#indent(
-						originalLine
-					) +
-					'// First session owns this local region.\n' +
-					originalLine
+					this.#indent(earlyLine) +
+					'const inverseLength = 1 / length;\n' +
+					earlyLine.replace(
+						'1 / length',
+						'inverseLength'
+					)
 			}
 		);
 
 		const before =
 			workspace.read(path);
-		const secondTarget =
-			target + 1;
-		const secondLine =
+		const lateTarget =
+			this.#lineOf(
+				before,
+				'const travel = Math.max(0, earliest.hit.time - 1e-4);'
+			);
+		const lateLine =
 			this.#lineAt(
 				before,
-				secondTarget
+				lateTarget
 			);
 		const result =
 			splicemark.edit(
@@ -361,16 +369,20 @@ export default class LiveDemo {
 				{
 					mode: 'lines',
 					start:
-						secondTarget,
+						lateTarget,
 					end:
-						secondTarget,
+						lateTarget,
 					expectedStart:
-						secondLine,
+						lateLine,
 					expectedEnd:
-						secondLine,
+						lateLine,
 					replacement:
-						secondLine +
-						' // second session'
+						this.#indent(lateLine) +
+						'const skin = 1e-4;\n' +
+						lateLine.replace(
+							'1e-4',
+							'skin'
+						)
 				}
 			);
 		const after =
@@ -389,7 +401,7 @@ export default class LiveDemo {
 		return {
 			id: 'peers',
 			title:
-				'Locally relevant peer edits',
+				'Two agents in a large game module',
 			file: result.file,
 			command:
 				'splicemark diff ' +
@@ -398,9 +410,16 @@ export default class LiveDemo {
 			after,
 			output,
 			focus: [
+				earlyTarget,
 				result.edit.lineStart
 			],
 			facts: [
+				[
+					'source lines',
+					String(
+						original.split('\n').length - 1
+					)
+				],
 				[
 					'active sessions',
 					'2'
@@ -410,10 +429,6 @@ export default class LiveDemo {
 					String(
 						state.peers.length
 					)
-				],
-				[
-					'global peer feed',
-					'none'
 				]
 			]
 		};
@@ -782,6 +797,46 @@ export default class LiveDemo {
 		if (!response.ok) {
 			throw new Error(
 				'Unable to load current source: ' +
+				file
+			);
+		}
+
+		return response.text();
+	}
+
+	async #example(file) {
+		if (this.#exampleLoader) {
+			return this.#exampleLoader(
+				file
+			);
+		}
+
+		const url =
+			new URL(
+				'../examples/' + file,
+				import.meta.url
+			);
+
+		url.searchParams.set(
+			'source',
+			Date.now() +
+				'-' +
+				Math.random()
+					.toString(16)
+					.slice(2)
+		);
+
+		const response =
+			await fetch(
+				url,
+				{
+					cache: 'no-store'
+				}
+			);
+
+		if (!response.ok) {
+			throw new Error(
+				'Unable to load executable example: ' +
 				file
 			);
 		}
