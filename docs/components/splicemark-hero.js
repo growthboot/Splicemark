@@ -82,7 +82,7 @@ class SplicemarkHero extends HTMLElement {
 				>
 					<div class="demo-intro">
 
-						<h2>Stay collision-aware while you code.</h2>
+						<h2>Stay collision-aware.</h2>
 
 						<p class="demo-description">
 							The agent runs <code>splicemark diff</code> for its session.

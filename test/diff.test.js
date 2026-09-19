@@ -23,10 +23,10 @@ function authored(overrides = {}) {
 test('defaults to 0-based hunk and gutter coordinates', () => {
 	const edit = authored();
 	const expected =
-		'[YOU · sm-current · Change source]\n' +
 		'--- a/source.txt\n' +
 		'+++ b/source.txt\n' +
 		'@@ -145,1 +145,2 @@\n' +
+		'[YOU · sm-current · Change source]\n' +
 		'145     -old\n' +
 		'    145 +new\n' +
 		'    146 +next\n';
@@ -44,10 +44,10 @@ test('defaults to 0-based hunk and gutter coordinates', () => {
 test('lineBase 1 shifts only displayed source coordinates', () => {
 	const edit = authored();
 	const expected =
-		'[YOU · sm-current · Change source]\n' +
 		'--- a/source.txt\n' +
 		'+++ b/source.txt\n' +
 		'@@ -146,1 +146,2 @@\n' +
+		'[YOU · sm-current · Change source]\n' +
 		'146     -old\n' +
 		'    146 +new\n' +
 		'    147 +next\n';
@@ -96,8 +96,11 @@ test('insertion rows leave old coordinates blank and increment only new coordina
 		]);
 	const lines = output.trimEnd().split('\n');
 	const header = lines.indexOf('@@ -9998,0 +9998,3 @@');
-	const rows = lines.slice(header + 1);
+	const attribution =
+		lines.indexOf('[YOU · sm-current · Change source]');
+	const rows = lines.slice(attribution + 1);
 
+	assert.equal(attribution, header + 1);
 	assert.equal(rows.length, 3);
 
 	for (const [index, coordinate] of [9998, 9999, 10000].entries()) {
@@ -125,8 +128,11 @@ test('deletion rows leave new coordinates blank and increment only old coordinat
 		]);
 	const lines = output.trimEnd().split('\n');
 	const header = lines.indexOf('@@ -9999,2 +9999,0 @@');
-	const rows = lines.slice(header + 1);
+	const attribution =
+		lines.indexOf('[YOU · sm-current · Change source]');
+	const rows = lines.slice(attribution + 1);
 
+	assert.equal(attribution, header + 1);
 	assert.equal(rows.length, 2);
 
 	for (const [index, coordinate] of [9999, 10000].entries()) {
@@ -160,8 +166,8 @@ test('multiple hunks reset counters from each hunk start', () => {
 			})
 		]);
 
-	assert.match(output, /@@ -10,2 \+10,1 @@\n10    -a\n11    -b\n   10 \+A/);
-	assert.match(output, /@@ -20,0 \+20,2 @@\n   20 \+X\n   21 \+Y/);
+	assert.match(output, /@@ -10,2 \+10,1 @@\n\[YOU · sm-current · Change source\]\n10    -a\n11    -b\n   10 \+A/);
+	assert.match(output, /@@ -20,0 \+20,2 @@\n\[YOU · sm-current · Change source\]\n   20 \+X\n   21 \+Y/);
 });
 
 test('peer note line metadata uses the selected coordinate base', () => {
@@ -253,29 +259,29 @@ test('replacement context expands truthful hunks and shifts with lineBase', () =
 
 	assert.equal(
 		zeroBased,
-		'[YOU · sm-current · Change source]\n' +
 		'--- a/source.txt\n' +
-		'+++ b/source.txt\n' +
-		'@@ -0,5 +0,5 @@\n' +
-		'0 0  zero\n' +
-		'1 1  one\n' +
-		'2   -old\n' +
-		'  2 +new\n' +
-		'3 3  three\n' +
-		'4 4  four\n'
+			'+++ b/source.txt\n' +
+			'@@ -0,5 +0,5 @@\n' +
+			'0 0  zero\n' +
+			'1 1  one\n' +
+			'[YOU · sm-current · Change source]\n' +
+			'2   -old\n' +
+			'  2 +new\n' +
+			'3 3  three\n' +
+			'4 4  four\n'
 	);
 	assert.equal(
 		oneBased,
-		'[YOU · sm-current · Change source]\n' +
 		'--- a/source.txt\n' +
-		'+++ b/source.txt\n' +
-		'@@ -1,5 +1,5 @@\n' +
-		'1 1  zero\n' +
-		'2 2  one\n' +
-		'3   -old\n' +
-		'  3 +new\n' +
-		'4 4  three\n' +
-		'5 5  four\n'
+			'+++ b/source.txt\n' +
+			'@@ -1,5 +1,5 @@\n' +
+			'1 1  zero\n' +
+			'2 2  one\n' +
+			'[YOU · sm-current · Change source]\n' +
+			'3   -old\n' +
+			'  3 +new\n' +
+			'4 4  three\n' +
+			'5 5  four\n'
 	);
 });
 
@@ -317,11 +323,11 @@ test('context stops at real file boundaries', () => {
 
 	assert.match(
 		beginning,
-		/@@ -0,3 \+0,3 @@\n0   -old\n  0 \+new\n1 1  one\n2 2  two\n$/
+		/@@ -0,3 \+0,3 @@\n\[YOU · sm-current · Change source\]\n0   -old\n  0 \+new\n1 1  one\n2 2  two\n$/
 	);
 	assert.match(
 		end,
-		/@@ -0,3 \+0,3 @@\n0 0  zero\n1 1  one\n2   -old\n  2 \+new\n$/
+		/@@ -0,3 \+0,3 @@\n0 0  zero\n1 1  one\n\[YOU · sm-current · Change source\]\n2   -old\n  2 \+new\n$/
 	);
 });
 
@@ -363,11 +369,11 @@ test('insertion and deletion context advance old and new coordinates independent
 
 	assert.match(
 		insertion,
-		/@@ -1,2 \+1,4 @@\n1 1  b\n  2 \+x\n  3 \+y\n2 4  c/
+		/@@ -1,2 \+1,4 @@\n1 1  b\n\[YOU · sm-current · Change source\]\n  2 \+x\n  3 \+y\n2 4  c/
 	);
 	assert.match(
 		deletion,
-		/@@ -1,4 \+1,2 @@\n1 1  b\n2   -x\n3   -y\n4 2  c/
+		/@@ -1,4 \+1,2 @@\n1 1  b\n\[YOU · sm-current · Change source\]\n2   -x\n3   -y\n4 2  c/
 	);
 });
 

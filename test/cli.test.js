@@ -72,10 +72,10 @@ test('CLI start, edit, and diff use real newlines and task-local attribution', t
 
 	const diff = run(root, ['diff', session]);
 	const expectedDefault =
-		'[YOU · ' + session + ' · Change source]\n' +
 		'--- a/source.txt\n' +
 		'+++ b/source.txt\n' +
 		'@@ -1,1 +1,1 @@\n' +
+		'[YOU · ' + session + ' · Change source]\n' +
 		'1   -old\n' +
 		'  1 +new\n';
 
@@ -89,10 +89,10 @@ test('CLI start, edit, and diff use real newlines and task-local attribution', t
 	const oneBased =
 		run(root, ['diff', session, '--line-base=1']);
 	const expectedOneBased =
-		'[YOU · ' + session + ' · Change source]\n' +
 		'--- a/source.txt\n' +
 		'+++ b/source.txt\n' +
 		'@@ -2,1 +2,1 @@\n' +
+		'[YOU · ' + session + ' · Change source]\n' +
 		'2   -old\n' +
 		'  2 +new\n';
 
@@ -171,18 +171,19 @@ test('CLI diff surfaces distant peer hunks from the same active file', t => {
 	const diff =
 		run(root, ['diff', requested, '--line-base=1']);
 
-	assert.match(diff, /\[YOU · sm-[0-9a-f]{8} · Change distant region\]/);
-	assert.match(diff, /@@ -450,1 \+450,1 @@/);
-	assert.match(diff, /^450 {5}-line-449$/m);
-	assert.match(diff, /^ {4}450 \+you-450$/m);
-	assert.match(diff, /\[PEER · sm-[0-9a-f]{8} · Change early region\]/);
-	assert.match(diff, /@@ -100,1 \+100,1 @@/);
-	assert.match(diff, /^100 {5}-line-99$/m);
-	assert.match(diff, /^ {4}100 \+peer-100$/m);
-	assert.ok(
-		diff.indexOf('@@ -100,1 +100,1 @@') <
-		diff.indexOf('@@ -450,1 +450,1 @@')
-	);
+	const lines = diff.trimEnd().split('\n');
+	const peerAttribution =
+		lines.indexOf('[PEER · ' + peer + ' · Change early region]');
+	const youAttribution =
+		lines.indexOf('[YOU · ' + requested + ' · Change distant region]');
+
+	assert.ok(peerAttribution >= 0);
+	assert.ok(youAttribution >= 0);
+	assert.equal(lines[peerAttribution - 1], '@@ -100,1 +100,1 @@');
+	assert.equal(lines[peerAttribution + 1], '100     -line-99');
+	assert.equal(lines[youAttribution - 1], '@@ -450,1 +450,1 @@');
+	assert.equal(lines[youAttribution + 1], '450     -line-449');
+	assert.ok(peerAttribution < youAttribution);
 });
 
 
@@ -282,12 +283,12 @@ test('CLI diff emits literal real context and all supported aliases are equivale
 	const context =
 		run(root, ['diff', session, '--context=2']);
 	const expected =
-		'[YOU · ' + session + ' · Change middle line]\n' +
 		'--- a/source.txt\n' +
 		'+++ b/source.txt\n' +
 		'@@ -1,5 +1,5 @@\n' +
 		'1 1  line-1\n' +
 		'2 2  line-2\n' +
+		'[YOU · ' + session + ' · Change middle line]\n' +
 		'3   -line-3\n' +
 		'  3 +changed-3\n' +
 		'4 4  line-4\n' +
@@ -315,12 +316,12 @@ test('CLI diff emits literal real context and all supported aliases are equivale
 			'--context=2',
 			'--line-base=1'
 		]),
-		'[YOU · ' + session + ' · Change middle line]\n' +
 		'--- a/source.txt\n' +
 		'+++ b/source.txt\n' +
 		'@@ -2,5 +2,5 @@\n' +
 		'2 2  line-1\n' +
 		'3 3  line-2\n' +
+		'[YOU · ' + session + ' · Change middle line]\n' +
 		'4   -line-3\n' +
 		'  4 +changed-3\n' +
 		'5 5  line-4\n' +
@@ -405,14 +406,19 @@ test('CLI context follows a peer location shifted by an earlier line-count chang
 			'--context=1'
 		]);
 
-	assert.match(
-		diff,
-		/\[PEER · sm-[0-9a-f]{8} · Change third line\]\n--- a\/source\.txt\n\+\+\+ b\/source\.txt\n@@ -2,3 \+2,3 @@\n2 2  one\n3   -third\n  3 \+peer-third\n4 4  last/
-	);
-	assert.ok(
-		diff.indexOf('[YOU · ' + requested + ' · Expand header]') <
-		diff.indexOf('[PEER · ' + peer + ' · Change third line]')
-	);
+	const lines = diff.trimEnd().split('\n');
+	const youAttribution =
+		lines.indexOf('[YOU · ' + requested + ' · Expand header]');
+	const peerAttribution =
+		lines.indexOf('[PEER · ' + peer + ' · Change third line]');
+
+	assert.ok(youAttribution >= 0);
+	assert.ok(peerAttribution >= 0);
+	assert.equal(lines[youAttribution - 1], '@@ -0,2 +0,3 @@');
+	assert.equal(lines[youAttribution + 1], '0   -zero');
+	assert.equal(lines[peerAttribution - 1], '2 2  one');
+	assert.equal(lines[peerAttribution + 1], '3   -third');
+	assert.ok(youAttribution < peerAttribution);
 });
 
 test('CLI help documents context defaults, aliases, and line-base interaction', t => {

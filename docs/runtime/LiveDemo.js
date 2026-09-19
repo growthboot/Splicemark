@@ -389,13 +389,19 @@ export default class LiveDemo {
 			workspace.read(path);
 		const state =
 			splicemark.diff(
-				second.id
+				second.id,
+				{
+					includeSources: true
+				}
 			);
 		const output =
-			new Diff().formatSession(
+			new Diff({
+				context: 2
+			}).formatSession(
 				state.session,
 				state.edits,
-				state.peers
+				state.peers,
+				state.sources
 			);
 
 		return {
@@ -405,7 +411,8 @@ export default class LiveDemo {
 			file: result.file,
 			command:
 				'splicemark diff ' +
-				second.id,
+				second.id +
+				' --context=2',
 			before,
 			after,
 			output,

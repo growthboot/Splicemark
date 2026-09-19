@@ -50,7 +50,7 @@ test('website peer example executes current production modules on a large source
 	);
 	assert.match(
 		result.command,
-		/^splicemark diff sm-[0-9a-f]{8}$/
+		/^splicemark diff sm-[0-9a-f]{8} --context=2$/
 	);
 	assert.match(
 		result.output,
@@ -60,6 +60,31 @@ test('website peer example executes current production modules on a large source
 		result.output,
 		/\[YOU · sm-[0-9a-f]{8} · Name collision skin tolerance\]/
 	);
+
+	const hunks =
+		[...result.output.matchAll(
+			/^@@ -(\d+),(\d+) \+(\d+),(\d+) @@$/gm
+		)].map(match => ({
+			oldStart: Number(match[1]),
+			oldCount: Number(match[2]),
+			newStart: Number(match[3]),
+			newCount: Number(match[4])
+		}));
+
+	assert.equal(hunks.length, 2);
+	for (const hunk of hunks) {
+		assert.equal(hunk.oldCount, 5);
+		assert.equal(hunk.newCount, 6);
+	}
+
+	const contextRows =
+		result.output
+			.split('\n')
+			.filter(line =>
+				/^\s*\d+\s+\d+\s{2}/.test(line)
+			);
+
+	assert.equal(contextRows.length, 8);
 
 	const positions =
 		[...result.output.matchAll(/^@@ -(\d+)/gm)]

@@ -150,11 +150,11 @@ export default class Diff {
 			);
 
 		return [
-			'[' + kind + ' · ' + session.id + ' · ' + session.description + ']',
 			'--- a/' + file,
 			'+++ b/' + file,
 			header,
 			before,
+			'[' + kind + ' · ' + session.id + ' · ' + session.description + ']',
 			removed,
 			inserted,
 			after
