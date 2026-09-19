@@ -117,56 +117,60 @@ h1 span {
 	box-shadow: 0 20px 70px rgba(0, 0, 0, 0.22);
 }
 
-.terminal-command {
-	padding: 14px 14px 15px;
-	border-bottom: 1px solid var(--line-soft);
-	background: #080a0f;
-	font-family: var(--mono);
-}
-
-.terminal-context {
-	display: flex;
-	gap: 8px;
-	margin-bottom: 8px;
-	font-size: 11px;
-	font-weight: 700;
-	letter-spacing: 0.04em;
-}
-
-.terminal-user {
-	color: #6f7681;
-}
-
-.terminal-path {
-	color: #555d68;
-}
-
-.terminal-input {
+.terminal-prompt {
 	display: flex;
 	align-items: center;
-	gap: 9px;
+	gap: 8px;
 	overflow-x: auto;
+	padding: 14px;
+	background: #080a0f;
+	font-family: var(--mono);
 	font-size: 14px;
+	line-height: 1.4;
 	white-space: nowrap;
 }
 
-.terminal-input code {
+.terminal-prompt-command {
+	border-bottom: 1px solid var(--line-soft);
+}
+
+.terminal-prompt-ready {
+	border-top: 1px solid var(--line-soft);
+}
+
+.terminal-user,
+.terminal-path,
+.terminal-symbol {
+	flex: 0 0 auto;
+}
+
+.terminal-user {
+	color: #737a85;
+	font-weight: 700;
+}
+
+.terminal-path {
+	color: #59616c;
+	font-weight: 700;
+}
+
+.terminal-symbol {
+	color: var(--green);
+	font-weight: 800;
+}
+
+.terminal-commandline {
 	color: #e0e2e7;
 	font-family: inherit;
 	font-size: inherit;
 }
 
-.prompt {
-	color: var(--green);
-	font-weight: 800;
-}
-
 .terminal-cursor {
-	width: 6px;
-	height: 15px;
+	width: 7px;
+	height: 16px;
 	flex: 0 0 auto;
 	background: #a8adb5;
-	opacity: 0.7;
+	opacity: 0.75;
 }
 
 

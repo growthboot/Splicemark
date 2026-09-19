@@ -93,20 +93,28 @@ class SplicemarkHero extends HTMLElement {
 					</div>
 
 					<div class="terminal">
-						<div class="terminal-command">
-							<div class="terminal-context">
-								<span class="terminal-user">agent@local</span>
-								<span class="terminal-path">~/src/splicemark</span>
-							</div>
-							<div class="terminal-input">
-								<span class="prompt" aria-hidden="true">❯</span>
-								<code>${this.#escape(capture?.command || 'Executing live Splicemark scenario…')}</code>
-								<span class="terminal-cursor" aria-hidden="true"></span>
-							</div>
+						<div class="terminal-prompt terminal-prompt-command">
+							<span class="terminal-user">agent@local</span>
+							<span class="terminal-path">~/</span>
+							<span class="terminal-symbol" aria-hidden="true">%</span>
+							<code class="terminal-commandline">${this.#escape(
+								capture?.command ||
+								'Executing live Splicemark scenario…'
+							)}</code>
 						</div>
 
 						<div class="terminal-output">
 							${this.#output(capture)}
+						</div>
+
+						<div
+							class="terminal-prompt terminal-prompt-ready"
+							aria-label="Shell ready for the next command"
+						>
+							<span class="terminal-user">agent@local</span>
+							<span class="terminal-path">~/</span>
+							<span class="terminal-symbol" aria-hidden="true">%</span>
+							<span class="terminal-cursor" aria-hidden="true"></span>
 						</div>
 					</div>
 				</div>
