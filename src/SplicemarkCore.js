@@ -1,5 +1,7 @@
 import Reconciler from './Reconciler.js';
 import PeerRegistry from './PeerRegistry.js';
+import { normalizeNewActorType } from './ActorType.js';
+import WorkingTreeAttribution from './WorkingTreeAttribution.js';
 
 export default class SplicemarkCore {
 	#git;
@@ -32,7 +34,12 @@ export default class SplicemarkCore {
 		this.#workspace = workspace;
 	}
 
-	start(description) {
+	start(
+		description,
+		{
+			actorType = 'agent'
+		} = {}
+	) {
 		const normalized =
 			description.trim();
 
@@ -43,7 +50,8 @@ export default class SplicemarkCore {
 		return this.#getStore()
 			.start(
 				normalized,
-				this.#git.getHead()
+				this.#git.getHead(),
+				normalizeNewActorType(actorType)
 			);
 	}
 
@@ -303,22 +311,172 @@ export default class SplicemarkCore {
 		}
 
 		const sources = {};
+		const unattributed = [];
+		const locations =
+			new Map();
+		const analyzedFiles =
+			new Set();
+		const attributed =
+			new Set();
+		const attribution =
+			new WorkingTreeAttribution();
 
-		if (includeSources) {
-			for (const file of activeFiles) {
-				const target =
-					this.#resolve(file, 'diff');
+		for (const file of activeFiles) {
+			const target =
+				this.#resolve(file, 'diff');
+			const source =
+				this.#workspace.read(target.file);
+			const base =
+				this.#git.getHeadContent(file);
 
+			if (typeof base === 'string') {
+				analyzedFiles.add(file);
+
+				const analysis =
+					attribution.analyze(
+						file,
+						base,
+						source,
+						[
+							...edits
+								.filter(edit =>
+									(edit.status || 'active') === 'active' &&
+									edit.path === file
+								)
+								.map(edit => ({
+									session,
+									edit
+								})),
+							...peers
+								.filter(peer =>
+									peer.edit.path === file
+								)
+						]
+					);
+
+				unattributed.push(
+					...analysis.unattributed
+				);
+
+				for (const key of analysis.attributed) {
+					attributed.add(key);
+				}
+
+				for (
+					const [key, location]
+					of analysis.locations
+				) {
+					locations.set(
+						key,
+						location
+					);
+				}
+			}
+
+			if (includeSources) {
 				sources[file] =
-					this.#workspace.read(target.file);
+					source;
 			}
 		}
 
+		const locatedEdits =
+			edits.map(edit =>
+				this.#withAttributionLocation(
+					session.id,
+					edit,
+					locations,
+					analyzedFiles,
+					attributed
+				)
+			);
+		const locatedPeers =
+			peers
+				.filter(peer => {
+					if (
+						!analyzedFiles.has(
+							peer.edit.path
+						)
+					) {
+						return true;
+					}
+
+					return attributed.has(
+						peer.session.id +
+							'\u0000' +
+							peer.edit.id
+					);
+				})
+				.map(peer => ({
+					...peer,
+					edit:
+						this.#withAttributionLocation(
+							peer.session.id,
+							peer.edit,
+							locations,
+							analyzedFiles,
+							attributed
+						)
+				}));
+
 		return {
 			session,
-			edits,
-			peers,
+			edits: locatedEdits,
+			peers: locatedPeers,
+			unattributed,
 			...(includeSources ? { sources } : {})
+		};
+	}
+
+	#withAttributionLocation(
+		sessionId,
+		edit,
+		locations,
+		analyzedFiles,
+		attributed
+	) {
+		const key =
+			sessionId +
+			'\u0000' +
+			edit.id;
+		const analyzed =
+			analyzedFiles.has(edit.path);
+
+		if (
+			(edit.status || 'active') === 'active' &&
+			analyzed &&
+			!attributed.has(key)
+		) {
+			return {
+				...edit,
+				status: 'stale',
+				attributionStatus:
+					'unmapped-working-tree'
+			};
+		}
+
+		const location =
+			locations.get(key);
+
+		if (!location) {
+			return edit;
+		}
+
+		const newCount =
+			edit.inserted === ''
+				? 0
+				: edit.inserted
+					.split(/\r?\n/)
+					.length;
+
+		return {
+			...edit,
+			...location,
+			lineStart:
+				location.newLineStart,
+			lineEnd:
+				location.newLineStart +
+				Math.max(newCount, 1) -
+				1
 		};
 	}
 

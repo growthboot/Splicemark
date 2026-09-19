@@ -22,6 +22,14 @@ export default class Git {
 		return this.#run(['rev-parse', 'HEAD'], true);
 	}
 
+	getHeadContent(file) {
+		return this.#runRaw([
+			'show',
+			'HEAD:' + file
+		], true);
+	}
+
+
 	getWorkingDiff(file) {
 		return this.#run([
 			'diff',
@@ -50,12 +58,24 @@ export default class Git {
 	}
 
 	#run(args, allowFailure = false) {
+		const result =
+			this.#runRaw(
+				args,
+				allowFailure
+			);
+
+		return result === null
+			? null
+			: result.trim();
+	}
+
+	#runRaw(args, allowFailure = false) {
 		try {
 			return execFileSync('git', args, {
 				cwd: this.#cwd,
 				encoding: 'utf8',
 				stdio: ['ignore', 'pipe', 'pipe']
-			}).trim();
+			});
 		} catch (error) {
 			if (allowFailure) {
 				return null;

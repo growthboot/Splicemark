@@ -1,6 +1,10 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { randomBytes } from 'node:crypto';
+import {
+	normalizeNewActorType,
+	normalizeStoredSession
+} from './ActorType.js';
 
 export default class SessionStore {
 	#root;
@@ -9,8 +13,14 @@ export default class SessionStore {
 		this.#root = root;
 	}
 
-	start(description, head) {
+	start(
+		description,
+		head,
+		actorType = 'agent'
+	) {
 		const sessions = path.join(this.#root, 'sessions');
+		const normalizedActorType =
+			normalizeNewActorType(actorType);
 
 		fs.mkdirSync(sessions, { recursive: true });
 
@@ -29,9 +39,11 @@ export default class SessionStore {
 			}
 
 			const session = {
-				version: 1,
+				version: 2,
 				id,
 				description,
+				actorType:
+					normalizedActorType,
 				status: 'active',
 				head,
 				startedAt: new Date().toISOString()
@@ -47,13 +59,9 @@ export default class SessionStore {
 	}
 
 	get(id) {
-		const file = path.join(this.#root, 'sessions', id, 'meta.json');
-
-		if (!fs.existsSync(file)) {
-			throw new Error('unknown session: ' + id);
-		}
-
-		return JSON.parse(fs.readFileSync(file, 'utf8'));
+		return normalizeStoredSession(
+			this.#readSession(id)
+		);
 	}
 
 	recordEdit(id, edit) {
@@ -133,12 +141,15 @@ export default class SessionStore {
 
 	updateHead(id, head) {
 		const file = path.join(this.#root, 'sessions', id, 'meta.json');
-		const session = this.get(id);
+		const session =
+			this.#readSession(id);
 
 		session.head = head;
 		fs.writeFileSync(file, JSON.stringify(session, null, '\t') + '\n');
 
-		return session;
+		return normalizeStoredSession(
+			session
+		);
 	}
 
 	listSessions() {
@@ -152,7 +163,16 @@ export default class SessionStore {
 			.sort()
 			.map(id => path.join(directory, id, 'meta.json'))
 			.filter(file => fs.existsSync(file))
-			.map(file => JSON.parse(fs.readFileSync(file, 'utf8')));
+			.map(file =>
+				normalizeStoredSession(
+					JSON.parse(
+						fs.readFileSync(
+							file,
+							'utf8'
+						)
+					)
+				)
+			);
 	}
 
 	updateEditLocation(id, editId, lineStart, lineEnd, locationStatus) {
@@ -255,17 +275,22 @@ export default class SessionStore {
 
 	finish(id) {
 		const file = path.join(this.#root, 'sessions', id, 'meta.json');
-		const session = this.get(id);
+		const session =
+			this.#readSession(id);
 
 		if (session.status === 'finished') {
-			return session;
+			return normalizeStoredSession(
+				session
+			);
 		}
 
 		session.status = 'finished';
 		session.finishedAt = new Date().toISOString();
 		fs.writeFileSync(file, JSON.stringify(session, null, '\t') + '\n');
 
-		return session;
+		return normalizeStoredSession(
+			session
+		);
 	}
 
 	clean(currentHead) {
@@ -335,4 +360,25 @@ export default class SessionStore {
 
 		return result;
 	}
+	#readSession(id) {
+		const file =
+			path.join(
+				this.#root,
+				'sessions',
+				id,
+				'meta.json'
+			);
+
+		if (!fs.existsSync(file)) {
+			throw new Error(
+				'unknown session: ' + id
+			);
+		}
+
+		return JSON.parse(
+			fs.readFileSync(file, 'utf8')
+		);
+	}
+
+
 }

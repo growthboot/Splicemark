@@ -1,13 +1,26 @@
+import {
+	normalizeNewActorType,
+	normalizeStoredSession
+} from './ActorType.js';
+
 export default class MemorySessionStore {
 	#edits = new Map();
 	#notes = new Map();
 	#sessions = [];
 
-	start(description, head) {
+	start(
+		description,
+		head,
+		actorType = 'agent'
+	) {
 		const session = {
-			version: 1,
+			version: 2,
 			id: this.#uniqueSessionId(),
 			description,
+			actorType:
+				normalizeNewActorType(
+					actorType
+				),
 			status: 'active',
 			head,
 			startedAt:
@@ -18,9 +31,9 @@ export default class MemorySessionStore {
 		this.#edits.set(session.id, []);
 		this.#notes.set(session.id, []);
 
-		return {
+		return normalizeStoredSession({
 			...session
-		};
+		});
 	}
 
 	get(id) {
@@ -33,9 +46,9 @@ export default class MemorySessionStore {
 			throw new Error('unknown session: ' + id);
 		}
 
-		return {
+		return normalizeStoredSession({
 			...session
-		};
+		});
 	}
 
 	recordEdit(id, edit) {
@@ -93,16 +106,18 @@ export default class MemorySessionStore {
 
 		session.head = head;
 
-		return {
+		return normalizeStoredSession({
 			...session
-		};
+		});
 	}
 
 	listSessions() {
 		return this.#sessions
-			.map(session => ({
-				...session
-			}));
+			.map(session =>
+				normalizeStoredSession({
+					...session
+				})
+			);
 	}
 
 	updateEditLocation(
@@ -184,18 +199,18 @@ export default class MemorySessionStore {
 			this.#findSession(id);
 
 		if (session.status === 'finished') {
-			return {
+			return normalizeStoredSession({
 				...session
-			};
+			});
 		}
 
 		session.status = 'finished';
 		session.finishedAt =
 			new Date().toISOString();
 
-		return {
+		return normalizeStoredSession({
 			...session
-		};
+		});
 	}
 
 	clean(currentHead) {

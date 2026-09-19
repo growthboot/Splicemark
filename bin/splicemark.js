@@ -14,6 +14,60 @@ function option(args, name) {
 	return args[index + 1];
 }
 
+function startArguments(args) {
+	const description = [];
+	let actorType = 'agent';
+	let seenActor = false;
+
+	for (
+		let index = 0;
+		index < args.length;
+		index++
+	) {
+		const arg = args[index];
+
+		if (
+			arg === '--actor' ||
+			arg.startsWith('--actor=')
+		) {
+			if (seenActor) {
+				throw new Error(
+					'--actor may be specified once'
+				);
+			}
+
+			seenActor = true;
+
+			if (arg === '--actor') {
+				if (index + 1 >= args.length) {
+					throw new Error(
+						'missing --actor'
+					);
+				}
+
+				actorType =
+					args[++index];
+			} else {
+				actorType =
+					arg.slice(
+						'--actor='.length
+					);
+			}
+
+			continue;
+		}
+
+		description.push(arg);
+	}
+
+	return {
+		description:
+			description.join(' '),
+		actorType
+	};
+}
+
+
 function diffLineBase(args) {
 	const inline =
 		args.filter(arg => arg.startsWith('--line-base='));
@@ -133,7 +187,16 @@ async function main() {
 	const splicemark = new Splicemark();
 
 	if (command === 'start') {
-		const session = splicemark.start(args.join(' '));
+		const start =
+			startArguments(args);
+		const session =
+			splicemark.start(
+				start.description,
+				{
+					actorType:
+						start.actorType
+				}
+			);
 		process.stdout.write(session.id + '\n');
 		return;
 	}
@@ -298,7 +361,8 @@ async function main() {
 				result.session,
 				result.edits,
 				result.peers,
-				result.sources
+				result.sources,
+				result.unattributed
 			)
 		);
 		return;
@@ -307,7 +371,7 @@ async function main() {
 	if (!command || command === 'help' || command === '--help' || command === '-h') {
 		process.stdout.write(
 			'Usage:\n' +
-			'  splicemark start "task description"\n' +
+			'  splicemark start "task description" [--actor=agent|human|automation]\n' +
 			'  splicemark edit SESSION FILE --lines START:END --expect-start TEXT --expect-end TEXT\n' +
 			'  splicemark edit SESSION FILE --chars START:END --expect-start TEXT --expect-end TEXT\n' +
 			'  splicemark batch SESSION FILE --lines < splices.json\n' +
@@ -317,6 +381,10 @@ async function main() {
 			'  splicemark diff SESSION [--line-base=0|1] [--context=N]\n' +
 			'  splicemark finish SESSION\n' +
 			'  splicemark clean\n\n' +
+			'Start options:\n' +
+			'  --actor=TYPE      agent, human, or automation (default: agent)\n' +
+			'                    Persisted with the session and shown in diff attribution\n' +
+			'                    Also: --actor TYPE\n\n' +
 			'Diff options:\n' +
 			'  --line-base=0|1  Source coordinates: 0 (default, agent/programmatic), 1 (human/editor)\n' +
 			'  --context=N       Unchanged source lines before and after each edit (default: 0)\n' +

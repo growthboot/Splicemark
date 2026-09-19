@@ -19,6 +19,8 @@ test('starts an atomically claimed session with task metadata', t => {
 	assert.equal(session.description, 'Fix proxy lifecycle');
 	assert.equal(session.status, 'active');
 	assert.equal(session.head, 'abc123');
+	assert.equal(session.version, 2);
+	assert.equal(session.actorType, 'agent');
 
 	const saved = JSON.parse(
 		fs.readFileSync(

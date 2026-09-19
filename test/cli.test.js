@@ -65,7 +65,7 @@ test('CLI start, edit, and diff use real newlines and task-local attribution', t
 		'old'
 	], 'new\n');
 
-	assert.match(edit, /\[YOU · sm-[0-9a-f]{8} · Change source\]/);
+	assert.match(edit, /\[YOU · AGENT · sm-[0-9a-f]{8} · Change source\]/);
 	assert.match(edit, /-old/);
 	assert.match(edit, /\+new/);
 	assert.equal(fs.readFileSync(path.join(root, 'source.txt'), 'utf8'), 'zero\nnew\nlast\n');
@@ -75,7 +75,7 @@ test('CLI start, edit, and diff use real newlines and task-local attribution', t
 		'--- a/source.txt\n' +
 		'+++ b/source.txt\n' +
 		'@@ -1,1 +1,1 @@\n' +
-		'[YOU · ' + session + ' · Change source]\n' +
+		'[YOU · AGENT · ' + session + ' · Change source]\n' +
 		'1   -old\n' +
 		'  1 +new\n';
 
@@ -92,7 +92,7 @@ test('CLI start, edit, and diff use real newlines and task-local attribution', t
 		'--- a/source.txt\n' +
 		'+++ b/source.txt\n' +
 		'@@ -2,1 +2,1 @@\n' +
-		'[YOU · ' + session + ' · Change source]\n' +
+		'[YOU · AGENT · ' + session + ' · Change source]\n' +
 		'2   -old\n' +
 		'  2 +new\n';
 
@@ -173,9 +173,9 @@ test('CLI diff surfaces distant peer hunks from the same active file', t => {
 
 	const lines = diff.trimEnd().split('\n');
 	const peerAttribution =
-		lines.indexOf('[PEER · ' + peer + ' · Change early region]');
+		lines.indexOf('[PEER · AGENT · ' + peer + ' · Change early region]');
 	const youAttribution =
-		lines.indexOf('[YOU · ' + requested + ' · Change distant region]');
+		lines.indexOf('[YOU · AGENT · ' + requested + ' · Change distant region]');
 
 	assert.ok(peerAttribution >= 0);
 	assert.ok(youAttribution >= 0);
@@ -216,7 +216,7 @@ test('CLI note, finish, clean, and help complete the agent lifecycle', t => {
 		'old'
 	], 'new\n');
 
-	assert.match(edit, /\[PEER NOTE · .* · Protect source\]/);
+	assert.match(edit, /\[PEER NOTE · AGENT · .* · Protect source\]/);
 	assert.match(edit, /Keep this region stable\./);
 
 	const finish = run(root, ['finish', owner]);
@@ -229,7 +229,15 @@ test('CLI note, finish, clean, and help complete the agent lifecycle', t => {
 
 	const help = run(root, ['help']);
 
-	assert.match(help, /splicemark start/);
+	assert.match(
+		help,
+		/splicemark start "task description" \[--actor=agent\|human\|automation\]/
+	);
+	assert.match(help, /default: agent/);
+	assert.match(
+		help,
+		/Persisted with the session and shown in diff attribution/
+	);
 	assert.match(help, /splicemark edit/);
 	assert.match(help, /splicemark note/);
 	assert.match(help, /splicemark diff SESSION \[--line-base=0\|1\]/);
@@ -288,7 +296,7 @@ test('CLI diff emits literal real context and all supported aliases are equivale
 		'@@ -1,5 +1,5 @@\n' +
 		'1 1  line-1\n' +
 		'2 2  line-2\n' +
-		'[YOU · ' + session + ' · Change middle line]\n' +
+		'[YOU · AGENT · ' + session + ' · Change middle line]\n' +
 		'3   -line-3\n' +
 		'  3 +changed-3\n' +
 		'4 4  line-4\n' +
@@ -321,7 +329,7 @@ test('CLI diff emits literal real context and all supported aliases are equivale
 		'@@ -2,5 +2,5 @@\n' +
 		'2 2  line-1\n' +
 		'3 3  line-2\n' +
-		'[YOU · ' + session + ' · Change middle line]\n' +
+		'[YOU · AGENT · ' + session + ' · Change middle line]\n' +
 		'4   -line-3\n' +
 		'  4 +changed-3\n' +
 		'5 5  line-4\n' +
@@ -408,16 +416,16 @@ test('CLI context follows a peer location shifted by an earlier line-count chang
 
 	const lines = diff.trimEnd().split('\n');
 	const youAttribution =
-		lines.indexOf('[YOU · ' + requested + ' · Expand header]');
+		lines.indexOf('[YOU · AGENT · ' + requested + ' · Expand header]');
 	const peerAttribution =
-		lines.indexOf('[PEER · ' + peer + ' · Change third line]');
+		lines.indexOf('[PEER · AGENT · ' + peer + ' · Change third line]');
 
 	assert.ok(youAttribution >= 0);
 	assert.ok(peerAttribution >= 0);
 	assert.equal(lines[youAttribution - 1], '@@ -0,2 +0,3 @@');
 	assert.equal(lines[youAttribution + 1], '0   -zero');
-	assert.equal(lines[peerAttribution - 1], '2 2  one');
-	assert.equal(lines[peerAttribution + 1], '3   -third');
+	assert.equal(lines[peerAttribution - 1], '1 2  one');
+	assert.equal(lines[peerAttribution + 1], '2   -third');
 	assert.ok(youAttribution < peerAttribution);
 });
 

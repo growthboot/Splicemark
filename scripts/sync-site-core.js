@@ -13,6 +13,7 @@ const destination = path.join(
 	'core'
 );
 const files = [
+	'ActorType.js',
 	'SplicemarkCore.js',
 	'TextEditor.js',
 	'MemoryWorkspace.js',
@@ -20,6 +21,7 @@ const files = [
 	'MemoryGit.js',
 	'PeerRegistry.js',
 	'Reconciler.js',
+	'WorkingTreeAttribution.js',
 	'Diff.js'
 ];
 

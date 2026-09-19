@@ -1,3 +1,5 @@
+import { actorTypeLabel } from './ActorType.js';
+
 export default class Diff {
 	#context;
 	#lineBase;
@@ -64,6 +66,8 @@ export default class Diff {
 		for (const peer of notes) {
 			sections.push(
 				'[PEER NOTE · ' +
+				actorTypeLabel(peer.session) +
+				' · ' +
 				peer.session.id +
 				' · ' +
 				peer.session.description +
@@ -86,6 +90,24 @@ export default class Diff {
 	}
 
 	#lineStart(edit) {
+		return this.#newLineStart(edit);
+	}
+
+	#oldLineStart(edit) {
+		if (Number.isInteger(edit.oldLineStart)) {
+			return edit.oldLineStart;
+		}
+
+		return Number.isInteger(edit.lineStart)
+			? edit.lineStart
+			: edit.appliedStart;
+	}
+
+	#newLineStart(edit) {
+		if (Number.isInteger(edit.newLineStart)) {
+			return edit.newLineStart;
+		}
+
 		return Number.isInteger(edit.lineStart)
 			? edit.lineStart
 			: edit.appliedStart;
@@ -97,9 +119,13 @@ export default class Diff {
 		file,
 		edit,
 		gutterWidth,
-		source
+		source,
+		actorType = null
 	) {
-		const lineStart = this.#lineStart(edit);
+		const oldLineStart =
+			this.#oldLineStart(edit);
+		const newLineStart =
+			this.#newLineStart(edit);
 		const oldCount =
 			this.#lineCount(edit.removed);
 		const newCount =
@@ -107,7 +133,7 @@ export default class Diff {
 		const context =
 			this.#contextRows(
 				file,
-				lineStart,
+				newLineStart,
 				newCount,
 				source
 			);
@@ -115,8 +141,10 @@ export default class Diff {
 			context.before.length;
 		const afterCount =
 			context.after.length;
-		const hunkStart =
-			lineStart - beforeCount;
+		const oldHunkStart =
+			oldLineStart - beforeCount;
+		const newHunkStart =
+			newLineStart - beforeCount;
 		const oldHunkCount =
 			beforeCount + oldCount + afterCount;
 		const newHunkCount =
@@ -126,48 +154,84 @@ export default class Diff {
 				? ''
 				: ' shifted ' + (edit.shift > 0 ? '+' : '') + edit.shift;
 		const header =
-			Number.isInteger(lineStart)
-				? '@@ -' + this.#coordinate(hunkStart) + ',' + oldHunkCount +
-					' +' + this.#coordinate(hunkStart) + ',' + newHunkCount + ' @@' + shift
+			Number.isInteger(oldLineStart) &&
+			Number.isInteger(newLineStart)
+				? '@@ -' + this.#coordinate(oldHunkStart) + ',' + oldHunkCount +
+					' +' + this.#coordinate(newHunkStart) + ',' + newHunkCount + ' @@' + shift
 				: '@@';
 		const before =
 			this.#contextContent(
 				context.before,
-				hunkStart,
-				hunkStart,
+				oldHunkStart,
+				newHunkStart,
 				gutterWidth
 			);
 		const removed =
-			this.#content('-', edit.removed, lineStart, gutterWidth);
+			this.#content(
+				'-',
+				edit.removed,
+				oldLineStart,
+				gutterWidth
+			);
 		const inserted =
-			this.#content('+', edit.inserted, lineStart, gutterWidth);
+			this.#content(
+				'+',
+				edit.inserted,
+				newLineStart,
+				gutterWidth
+			);
 		const after =
 			this.#contextContent(
 				context.after,
-				lineStart + oldCount,
-				lineStart + newCount,
+				oldLineStart + oldCount,
+				newLineStart + newCount,
 				gutterWidth
 			);
+		const attribution =
+			kind === 'UNATTRIBUTED'
+				? '[UNATTRIBUTED · ' +
+					String(actorType || 'unknown').toUpperCase() +
+					' · working-tree]'
+				: '[' +
+					kind +
+					' · ' +
+					actorTypeLabel(session) +
+					' · ' +
+					session.id +
+					' · ' +
+					session.description +
+					']';
 
 		return [
 			'--- a/' + file,
 			'+++ b/' + file,
 			header,
 			before,
-			'[' + kind + ' · ' + session.id + ' · ' + session.description + ']',
+			attribution,
 			removed,
 			inserted,
 			after
 		].filter(Boolean).join('\n');
 	}
 
-	formatSession(session, edits, peers = [], sources = {}) {
+	formatSession(
+		session,
+		edits,
+		peers = [],
+		sources = {},
+		unattributed = []
+	) {
 		const active =
 			edits.filter(edit => (edit.status || 'active') === 'active');
 		const stale =
 			edits.filter(edit => edit.status === 'stale');
 		const files =
-			[...new Set(active.map(edit => edit.path))];
+			[
+				...new Set([
+					...active.map(edit => edit.path),
+					...unattributed.map(item => item.file)
+				])
+			];
 		const entries = files.flatMap(file =>
 			[
 				...active
@@ -185,6 +249,16 @@ export default class Diff {
 						session: peer.session,
 						file: peer.edit.path,
 						edit: peer.edit
+					})),
+				...unattributed
+					.filter(item => item.file === file)
+					.map(item => ({
+						kind: 'UNATTRIBUTED',
+						actorType:
+							item.actorType,
+						session: null,
+						file: item.file,
+						edit: item.edit
 					}))
 			].sort(
 				(a, b) =>
@@ -200,20 +274,27 @@ export default class Diff {
 				entry.file,
 				entry.edit,
 				gutterWidth,
-				sources[entry.file]
+				sources[entry.file],
+				entry.actorType
 			)
 		);
 
 		for (const edit of stale) {
 			sections.push(
 				'[STALE · ' + edit.path + ' · ' + edit.id + ']\n' +
-				'Authorship could not be mapped unambiguously after HEAD changed.'
+				'Authorship could not be mapped unambiguously to the current working tree.'
 			);
 		}
 
 		if (sections.length === 0) {
 			return (
-				'[YOU · ' + session.id + ' · ' + session.description + ']\n' +
+				'[YOU · ' +
+				actorTypeLabel(session) +
+				' · ' +
+				session.id +
+				' · ' +
+				session.description +
+				']\n' +
 				'No active authored changes.\n'
 			);
 		}
@@ -231,60 +312,91 @@ export default class Diff {
 		let largest = this.#lineBase;
 
 		for (const entry of entries) {
-			const lineStart = this.#lineStart(entry.edit);
+			const oldLineStart =
+				this.#oldLineStart(entry.edit);
+			const newLineStart =
+				this.#newLineStart(entry.edit);
 			const oldCount =
 				this.#lineCount(entry.edit.removed);
 			const newCount =
 				this.#lineCount(entry.edit.inserted);
 
-			if (!Number.isInteger(lineStart)) {
+			if (
+				!Number.isInteger(oldLineStart) ||
+				!Number.isInteger(newLineStart)
+			) {
 				continue;
 			}
 
 			if (this.#context === 0) {
-				const rowCount =
-					Math.max(oldCount, newCount);
-
-				if (rowCount === 0) {
-					continue;
+				if (oldCount > 0) {
+					largest = Math.max(
+						largest,
+						this.#coordinate(
+							oldLineStart +
+								oldCount -
+								1
+						)
+					);
 				}
 
-				largest = Math.max(
-					largest,
-					this.#coordinate(lineStart + rowCount - 1)
-				);
+				if (newCount > 0) {
+					largest = Math.max(
+						largest,
+						this.#coordinate(
+							newLineStart +
+								newCount -
+								1
+						)
+					);
+				}
+
 				continue;
 			}
 
 			const context =
 				this.#contextRows(
 					entry.file,
-					lineStart,
+					newLineStart,
 					newCount,
 					sources[entry.file]
 				);
-			const start =
-				lineStart - context.before.length;
+			const beforeCount =
+				context.before.length;
+			const afterCount =
+				context.after.length;
+			const oldStart =
+				oldLineStart - beforeCount;
+			const newStart =
+				newLineStart - beforeCount;
 			const oldRows =
-				context.before.length +
+				beforeCount +
 				oldCount +
-				context.after.length;
+				afterCount;
 			const newRows =
-				context.before.length +
+				beforeCount +
 				newCount +
-				context.after.length;
+				afterCount;
 
 			if (oldRows > 0) {
 				largest = Math.max(
 					largest,
-					this.#coordinate(start + oldRows - 1)
+					this.#coordinate(
+						oldStart +
+							oldRows -
+							1
+					)
 				);
 			}
 
 			if (newRows > 0) {
 				largest = Math.max(
 					largest,
-					this.#coordinate(start + newRows - 1)
+					this.#coordinate(
+						newStart +
+							newRows -
+							1
+					)
 				);
 			}
 		}

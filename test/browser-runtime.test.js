@@ -79,11 +79,11 @@ test('browser-safe runtime surfaces real peer output from memory adapters', () =
 
 	assert.match(
 		output,
-		/\[YOU · sm-[0-9a-f]{8} · Update same source\]/
+		/\[YOU · AGENT · sm-[0-9a-f]{8} · Update same source\]/
 	);
 	assert.match(
 		output,
-		/\[PEER · sm-[0-9a-f]{8} · Change source\]/
+		/\[PEER · AGENT · sm-[0-9a-f]{8} · Change source\]/
 	);
 	assert.match(output, /\+agent-a/);
 });

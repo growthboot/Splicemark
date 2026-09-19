@@ -54,11 +54,11 @@ test('website peer example executes current production modules on a large source
 	);
 	assert.match(
 		result.output,
-		/\[PEER · sm-[0-9a-f]{8} · Cache inverse vector length\]/
+		/\[PEER · AGENT · sm-[0-9a-f]{8} · Cache inverse vector length\]/
 	);
 	assert.match(
 		result.output,
-		/\[YOU · sm-[0-9a-f]{8} · Name collision skin tolerance\]/
+		/\[YOU · AGENT · sm-[0-9a-f]{8} · Name collision skin tolerance\]/
 	);
 
 	const hunks =

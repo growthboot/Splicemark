@@ -32,6 +32,22 @@ export default class MemoryGit {
 		return this.#head;
 	}
 
+	getHeadContent(file) {
+		const base =
+			this.#snapshots.get(
+				this.#head
+			);
+
+		if (!base) {
+			return null;
+		}
+
+		return Object.hasOwn(base, file)
+			? base[file]
+			: '';
+	}
+
+
 	getWorkingDiff(file) {
 		const base =
 			this.#snapshots.get(this.#head);
